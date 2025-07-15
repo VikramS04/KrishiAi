@@ -4,7 +4,7 @@ import FAQSecion  from './components/ui/FAQSection'
 import logo from './assets/KrishiAi.png'
 
 /* const API_BASE_URL = 'http://127.0.0.1:5001/api' */
-const API_BASE_URL = 'https://flask-hello-world-lovat-xi.vercel.app/' 
+const API_BASE_URL = 'https://flask-hello-world-lovat-xi.vercel.app/api' 
 
 function App() {
   const [language, setLanguage] = useState('english')
