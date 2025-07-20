@@ -422,7 +422,7 @@ function App() {
             </div>
 
             <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-purple-500">
-              <div className="text-4xl font-bold text-purple-600 mb-2">12K+</div>
+              <div className="text-4xl font-bold text-purple-600 mb-2">Coming Soon..</div>
               <div className="text-sm text-gray-500 mb-2">Farmers</div>
               <h3 className="text-xl font-semibold mb-3">{t.community}</h3>
               <p className="text-gray-600 mb-4">{t.communityForumDesc}</p>
