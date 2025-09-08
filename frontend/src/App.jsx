@@ -187,12 +187,11 @@ function App() {
   }
 
   const getCropRecommendations = async () => {
-    if (!user) {
+    /*if (!user) {
       alert('Please register first to get crop recommendations')
       setCurrentView('register')
       return
-    }
-    
+    }*/    
     try {
       setLoading(true)
       const response = await fetch(`${API_BASE_URL}/crops/recommend`, {
