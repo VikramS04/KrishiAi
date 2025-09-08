@@ -4,7 +4,7 @@ import FAQSecion  from './components/ui/FAQSection'
 import logo from './assets/KrishiAi.png'
 
 /* const API_BASE_URL = 'http://127.0.0.1:5001/api' */
-const API_BASE_URL = 'https://flask-hello-world-lovat-xi.vercel.app/' 
+const API_BASE_URL = 'https://flask-hello-world-lovat-xi.vercel.app/api' 
 
 function App() {
   const [language, setLanguage] = useState('english')
@@ -16,12 +16,12 @@ function App() {
   // Soil Analysis State
   const [soilData, setSoilData] = useState({
     location: '',
-    ph_level: 0,
-    nitrogen: 0,
-    phosphorus: 0,
-    potassium: 0,
-    organic_matter: 0,
-    moisture_content: 0
+    ph_level: '',
+    nitrogen: '',
+    phosphorus: '',
+    potassium: '',
+    organic_matter: '',
+    moisture_content: ''
   })
   const [soilResults, setSoilResults] = useState(null)
   
@@ -187,12 +187,11 @@ function App() {
   }
 
   const getCropRecommendations = async () => {
-    if (!user) {
+    /*if (!user) {
       alert('Please register first to get crop recommendations')
       setCurrentView('register')
       return
-    }
-    
+    }*/    
     try {
       setLoading(true)
       const response = await fetch(`${API_BASE_URL}/crops/recommend`, {
@@ -422,7 +421,7 @@ function App() {
             </div>
 
             <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-purple-500">
-              <div className="text-4xl font-bold text-purple-600 mb-2">12K+</div>
+              <div className="text-4xl font-bold text-purple-600 mb-2">Coming Soon...</div>
               <div className="text-sm text-gray-500 mb-2">Farmers</div>
               <h3 className="text-xl font-semibold mb-3">{t.community}</h3>
               <p className="text-gray-600 mb-4">{t.communityForumDesc}</p>
@@ -444,11 +443,11 @@ function App() {
           <p className="text-center text-xl mb-12">{t.joinThousands}</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-4xl font-bold mb-2">50K+</div>
+              <div className="text-4xl font-bold mb-2">Coming Soon...</div>
               <div className="text-green-200">{t.activeFarmers}</div>
             </div>
             <div>
-              <div className="text-4xl font-bold mb-2">200K+</div>
+              <div className="text-4xl font-bold mb-2">Coming Soon...</div>
               <div className="text-green-200">{t.soilAnalyses}</div>
             </div>
             <div>
