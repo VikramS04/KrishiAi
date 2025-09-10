@@ -200,8 +200,8 @@ function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_id: user.id
-        })
+          user_id: 1
+      })
       })
       const result = await response.json()
       if (result.success) {
@@ -257,11 +257,11 @@ function App() {
   }
 
   const createCommunityPost = async () => {
-    if (!user) {
+    /*if (!user) {
       alert('Please register first to create posts')
       setCurrentView('register')
       return
-    }
+    }*/
     
     try {
       setLoading(true)
@@ -271,7 +271,7 @@ function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_id: user.id,
+          user_id: 1,
           ...newPost,
           language: language
         })
@@ -292,11 +292,11 @@ function App() {
   }
 
   const detectDisease = async () => {
-    if (!user) {
+    /*if (!user) {
       alert('Please register first to use disease detection')
       setCurrentView('register')
       return
-    }
+    }*/
     
     try {
       setLoading(true)
@@ -306,7 +306,7 @@ function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_id: user.id,
+          user_id: 1,
           crop_type: 'Tomato' // Default for demo
         })
       })
@@ -809,9 +809,6 @@ function App() {
   const renderDiseaseDetection = () => (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container mx-auto px-4">
-
-
-
 
         <div className="bg-gradient-to-br from-green-50 to-white border-l-4 border-green-500 rounded-xl p-6 max-w-4xl mx-auto mt-8 shadow-md">
       <div className="flex items-center mb-3">

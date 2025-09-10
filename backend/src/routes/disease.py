@@ -49,7 +49,7 @@ def detect_disease():
         return jsonify({'error': str(e)}), 500
 
 @disease_bp.route('/disease/history/<int:user_id>', methods=['GET'])
-def get_disease_history(user_id):
+def get_disease_history(user_id = 1):
     """Get disease detection history for a user"""
     try:
         detections = DiseaseDetection.query.filter_by(user_id=user_id).order_by(DiseaseDetection.created_at.desc()).all()
