@@ -1,7 +1,9 @@
 import { FormInput } from '../components/FormInput'
 import { theme } from '../styles/theme'
 
-export function RegisterPage({ t, styles, loading, authMode, setAuthMode, userForm, setUserForm, loginIdentifier, setLoginIdentifier, loginPassword, setLoginPassword, createUser, loginUser }) {
+export function RegisterPage({ t, styles, viewport, loading, authMode, setAuthMode, userForm, setUserForm, loginIdentifier, setLoginIdentifier, loginPassword, setLoginPassword, createUser, loginUser }) {
+  const isMobile = viewport?.isMobile
+
   const fields = [
     { ph: t.register.fields[0], k: 'username', type: 'text' },
     { ph: t.register.fields[1], k: 'email', type: 'email' },
@@ -22,7 +24,7 @@ export function RegisterPage({ t, styles, loading, authMode, setAuthMode, userFo
             <p style={{ color: theme.colors.muted, fontSize: 16 }}>{authMode === 'login' ? t.auth.loginSubtitle : t.register.subtitle}</p>
           </div>
           <div style={styles.card}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10, marginBottom: 18 }}>
               <button onClick={() => setAuthMode('login')} style={{ ...styles.outlineBtn(theme.colors.leaf), background: authMode === 'login' ? `${theme.colors.leaf}12` : 'transparent', padding: '10px 18px' }}>
                 {t.auth.loginTab}
               </button>

@@ -1,6 +1,9 @@
 import { theme } from '../styles/theme'
 
-export function HomePage({ t, styles, setCurrentView, openFAQ, setOpenFAQ }) {
+export function HomePage({ t, styles, viewport, setCurrentView, openFAQ, setOpenFAQ }) {
+  const isMobile = viewport?.isMobile
+  const isTablet = viewport?.isTablet
+
   const features = [
     { id: 'soil', icon: '◎', title: t.home.features.soil[0], desc: t.home.features.soil[1], color: theme.colors.soil, metrics: [{ label: t.home.features.soil[2], val: '7' }, { label: t.home.features.soil[3], val: '20+' }] },
     { id: 'disease', icon: '⚕', title: t.home.features.disease[0], desc: t.home.features.disease[1], color: theme.colors.error, metrics: [{ label: t.home.features.disease[2], val: '50+' }, { label: t.home.features.disease[3], val: 'Live' }] },
@@ -10,16 +13,16 @@ export function HomePage({ t, styles, setCurrentView, openFAQ, setOpenFAQ }) {
 
   return (
     <div>
-      <div style={{ background: `linear-gradient(135deg, ${theme.colors.leafDark} 0%, ${theme.colors.leaf} 60%, ${theme.colors.leafLight} 100%)`, padding: '80px 0 96px', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ background: `linear-gradient(135deg, ${theme.colors.leafDark} 0%, ${theme.colors.leaf} 60%, ${theme.colors.leafLight} 100%)`, padding: isMobile ? '48px 0 56px' : '80px 0 96px', position: 'relative', overflow: 'hidden' }}>
         <div style={styles.container}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
-            <div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 32 : 64, alignItems: 'center' }}>
+            <div style={{ textAlign: isMobile ? 'center' : 'left' }}>
               <div style={{ ...styles.badge('#90E0B0'), marginBottom: 20, fontSize: 12 }}>🌱 {t.home.badge}</div>
               <h1 style={styles.h1}>{t.home.titleTop}<br />{t.home.titleBottom}</h1>
-              <p style={{ fontSize: 19, color: 'rgba(255,255,255,0.82)', marginTop: 20, marginBottom: 36, lineHeight: 1.6, maxWidth: 420 }}>{t.home.subtitle}</p>
-              <div style={{ display: 'flex', gap: 14 }}>
-                <button onClick={() => setCurrentView('register')} style={{ ...styles.primaryBtn('#fff'), color: theme.colors.leafDark, width: 'auto', padding: '14px 32px', fontSize: 16 }}>{t.home.getStarted}</button>
-                <button onClick={() => setCurrentView('soil')} style={{ padding: '14px 28px', borderRadius: 10, border: '2px solid rgba(255,255,255,0.5)', background: 'transparent', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{t.home.analyzeSoil} →</button>
+              <p style={{ fontSize: isMobile ? 17 : 19, color: 'rgba(255,255,255,0.82)', marginTop: 20, marginBottom: 36, lineHeight: 1.6, maxWidth: isMobile ? '100%' : 420, marginLeft: isMobile ? 'auto' : 0, marginRight: isMobile ? 'auto' : 0 }}>{t.home.subtitle}</p>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 14 }}>
+                <button onClick={() => setCurrentView('register')} style={{ ...styles.primaryBtn('#fff'), color: theme.colors.leafDark, width: isMobile ? '100%' : 'auto', padding: '14px 32px', fontSize: 16 }}>{t.home.getStarted}</button>
+                <button onClick={() => setCurrentView('soil')} style={{ padding: '14px 28px', borderRadius: 10, border: '2px solid rgba(255,255,255,0.5)', background: 'transparent', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', width: isMobile ? '100%' : 'auto' }}>{t.home.analyzeSoil} →</button>
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -46,7 +49,7 @@ export function HomePage({ t, styles, setCurrentView, openFAQ, setOpenFAQ }) {
             <h2 style={{ ...styles.h2, textAlign: 'center' }}>{t.home.farmNeeds}</h2>
             <p style={{ color: theme.colors.muted, fontSize: 17, maxWidth: 480, margin: '12px auto 0', lineHeight: 1.6 }}>{t.home.farmNeedsSubtitle}</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 24 }}>
             {features.map(f => (
               <div key={f.id} style={{ ...styles.card, borderTop: `4px solid ${f.color}`, display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
@@ -56,14 +59,14 @@ export function HomePage({ t, styles, setCurrentView, openFAQ, setOpenFAQ }) {
                     <p style={{ color: theme.colors.muted, fontSize: 15, lineHeight: 1.6, margin: '6px 0 0' }}>{f.desc}</p>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 12, paddingTop: 16, borderTop: '1px solid #F3F4F6' }}>
+                <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 12, paddingTop: 16, borderTop: '1px solid #F3F4F6' }}>
                   {f.metrics.map((m, i) => (
                     <div key={i} style={{ flex: 1, background: `${f.color}08`, borderRadius: 10, padding: '10px 14px' }}>
                       <div style={{ fontSize: 18, fontWeight: 700, color: f.color }}>{m.val}</div>
                       <div style={{ fontSize: 12, color: theme.colors.muted, marginTop: 2 }}>{m.label}</div>
                     </div>
                   ))}
-                  <button onClick={() => setCurrentView(f.id)} style={{ padding: '10px 18px', borderRadius: 10, border: `1.5px solid ${f.color}`, background: 'transparent', color: f.color, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', alignSelf: 'stretch', whiteSpace: 'nowrap' }}>{t.common.open} →</button>
+                  <button onClick={() => setCurrentView(f.id)} style={{ padding: '10px 18px', borderRadius: 10, border: `1.5px solid ${f.color}`, background: 'transparent', color: f.color, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', alignSelf: 'stretch', whiteSpace: 'nowrap', width: isMobile ? '100%' : 'auto' }}>{t.common.open} →</button>
                 </div>
               </div>
             ))}
@@ -74,7 +77,7 @@ export function HomePage({ t, styles, setCurrentView, openFAQ, setOpenFAQ }) {
       <section style={{ ...styles.section, background: '#fff' }}>
         <div style={styles.container}>
           <h2 style={{ ...styles.h2, textAlign: 'center', marginBottom: 48 }}>{t.home.howItWorks}</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 32 }}>
             {t.home.steps.map((step, i) => (
               <div key={i} style={{ textAlign: 'center', padding: '32px 24px' }}>
                 <div style={{ fontSize: 48, marginBottom: 16 }}>{['👤', '📊', '✨'][i]}</div>
@@ -106,9 +109,9 @@ export function HomePage({ t, styles, setCurrentView, openFAQ, setOpenFAQ }) {
 
       <section style={{ background: `linear-gradient(135deg, ${theme.colors.leafDark}, ${theme.colors.leaf})`, padding: '64px 0' }}>
         <div style={{ ...styles.container, textAlign: 'center' }}>
-          <h2 style={{ color: '#fff', fontSize: 36, fontWeight: 700, margin: '0 0 16px', letterSpacing: '-1px' }}>{t.home.ctaTitle}</h2>
-          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 18, marginBottom: 32 }}>{t.home.ctaSubtitle}</p>
-          <button onClick={() => setCurrentView('register')} style={{ ...styles.primaryBtn('#fff'), color: theme.colors.leafDark, width: 'auto', padding: '16px 40px', fontSize: 17 }}>{t.home.createFreeProfile}</button>
+          <h2 style={{ color: '#fff', fontSize: isMobile ? 28 : 36, fontWeight: 700, margin: '0 0 16px', letterSpacing: '-1px' }}>{t.home.ctaTitle}</h2>
+          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: isMobile ? 16 : 18, marginBottom: 32 }}>{t.home.ctaSubtitle}</p>
+          <button onClick={() => setCurrentView('register')} style={{ ...styles.primaryBtn('#fff'), color: theme.colors.leafDark, width: isMobile ? '100%' : 'auto', padding: '16px 40px', fontSize: 17 }}>{t.home.createFreeProfile}</button>
         </div>
       </section>
     </div>

@@ -5,6 +5,7 @@ import { theme } from '../styles/theme'
 export function WeatherPage({
   t,
   styles,
+  viewport,
   loading,
   language,
   weatherState,
@@ -21,6 +22,9 @@ export function WeatherPage({
   getWeatherData,
   getDeviceWeatherData,
 }) {
+  const isMobile = viewport?.isMobile
+  const isTablet = viewport?.isTablet
+
   return (
     <div style={{ ...styles.section, background: theme.colors.parchment }}>
       <div style={styles.container}>
@@ -31,7 +35,7 @@ export function WeatherPage({
             <p style={{ color: theme.colors.muted, fontSize: 17 }}>{t.weather.subtitle}</p>
           </div>
           <div style={{ ...styles.card, marginBottom: 24 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, alignItems: 'center' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr auto', gap: 12, alignItems: 'center' }}>
               <select
                 value={weatherState}
                 onChange={e => {
@@ -61,11 +65,11 @@ export function WeatherPage({
                 <option value="">{t.common.selectCity}</option>
                 {stateCities.map(city => <option key={city} value={city}>{city}</option>)}
               </select>
-              <button onClick={getWeatherData} disabled={loading} style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: theme.colors.sky, color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', opacity: loading ? 0.6 : 1 }}>
+              <button onClick={getWeatherData} disabled={loading} style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: theme.colors.sky, color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', opacity: loading ? 0.6 : 1, width: isMobile ? '100%' : 'auto' }}>
                 {loading ? t.weather.loading : t.weather.getForecast}
               </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'center', marginTop: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr auto', gap: 12, alignItems: 'center', marginTop: 12 }}>
               <FormInput
                 placeholder={t.common.customLocation}
                 value={weatherLocationMode === 'custom' ? weatherLocation : ''}
@@ -74,14 +78,14 @@ export function WeatherPage({
                   setWeatherLocation(e.target.value)
                 }}
               />
-              <button onClick={getDeviceWeatherData} disabled={loading} style={{ ...styles.outlineBtn(theme.colors.sky), whiteSpace: 'nowrap', opacity: loading ? 0.6 : 1 }}>
+              <button onClick={getDeviceWeatherData} disabled={loading} style={{ ...styles.outlineBtn(theme.colors.sky), whiteSpace: 'nowrap', opacity: loading ? 0.6 : 1, width: isMobile ? '100%' : 'auto' }}>
                 {t.weather.currentLocation}
               </button>
             </div>
           </div>
 
           {weatherData && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
               {[
                 { label: t.weather.temperature, value: `${weatherData.temperature}°C`, sub: weatherData.condition, color: theme.colors.sun, icon: '🌡' },
                 { label: t.weather.humidity, value: `${weatherData.humidity}%`, sub: `${t.weather.wind} ${weatherData.wind_speed} km/h`, color: theme.colors.sky, icon: '💧' },
@@ -100,7 +104,7 @@ export function WeatherPage({
           {weatherForecast && (
             <div style={styles.card}>
               <h3 style={{ ...styles.h3, marginBottom: 20 }}>{t.weather.forecast}</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : isTablet ? 'repeat(4, 1fr)' : 'repeat(7, 1fr)', gap: 10 }}>
                 {weatherForecast.slice(0, 7).map((day, i) => (
                   <div key={i} style={{ textAlign: 'center', padding: '16px 8px', background: i === 0 ? `${theme.colors.sky}10` : '#F9FAFB', borderRadius: 12, border: i === 0 ? `1px solid ${theme.colors.sky}30` : 'none' }}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: theme.colors.muted, marginBottom: 8 }}>{new Date(day.date).toLocaleDateString(language === 'hindi' ? 'hi-IN' : 'en-IN', { weekday: 'short' })}</div>

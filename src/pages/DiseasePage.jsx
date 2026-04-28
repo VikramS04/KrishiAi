@@ -1,7 +1,9 @@
 import { FormInput } from '../components/FormInput'
 import { theme } from '../styles/theme'
 
-export function DiseasePage({ t, styles, loading, diseaseCrop, setDiseaseCrop, diseaseSymptoms, setDiseaseSymptoms, diseaseImage, setDiseaseImage, diseaseResults, detectDisease }) {
+export function DiseasePage({ t, styles, viewport, loading, diseaseCrop, setDiseaseCrop, diseaseSymptoms, setDiseaseSymptoms, diseaseImage, setDiseaseImage, diseaseResults, detectDisease }) {
+  const isMobile = viewport?.isMobile
+
   const typeColors = ['#92400E', '#1D4ED8', '#6D28D9', '#065F46']
   const typeIcons = ['🍄', '🧫', '🧪', '⚡']
 
@@ -14,7 +16,7 @@ export function DiseasePage({ t, styles, loading, diseaseCrop, setDiseaseCrop, d
             <h2 style={styles.h2}>{t.disease.title}</h2>
             <p style={{ color: theme.colors.muted, fontSize: 17 }}>{t.disease.subtitle}</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 28 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 16, marginBottom: 28 }}>
             {t.disease.types.map((type, i) => (
               <div key={type[0]} style={{ ...styles.card, display: 'flex', gap: 14, alignItems: 'flex-start', padding: '16px 20px' }}>
                 <div style={{ fontSize: 28 }}>{typeIcons[i]}</div>
@@ -24,7 +26,7 @@ export function DiseasePage({ t, styles, loading, diseaseCrop, setDiseaseCrop, d
           </div>
           <div style={{ ...styles.card, marginBottom: 24 }}>
             <h3 style={{ ...styles.h3, color: theme.colors.error, marginBottom: 20 }}>{t.disease.uploadTitle}</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 16 }}>
               <FormInput placeholder={t.disease.cropPlaceholder} value={diseaseCrop} onChange={e => setDiseaseCrop(e.target.value)} />
               <FormInput placeholder={t.disease.symptomsPlaceholder} value={diseaseSymptoms} onChange={e => setDiseaseSymptoms(e.target.value)} />
             </div>
@@ -41,7 +43,7 @@ export function DiseasePage({ t, styles, loading, diseaseCrop, setDiseaseCrop, d
           {diseaseResults && (
             <div style={styles.card}>
               <h3 style={{ ...styles.h3, color: theme.colors.error, marginBottom: 24 }}>{t.disease.results}</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
                 {[
                   { label: t.disease.disease, value: diseaseResults.detection_result.disease_name, color: theme.colors.error },
                   { label: t.disease.confidence, value: `${(diseaseResults.detection_result.confidence_score * 100).toFixed(1)}%`, color: theme.colors.sun },

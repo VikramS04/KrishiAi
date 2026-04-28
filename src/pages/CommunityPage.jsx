@@ -2,7 +2,9 @@ import { FormInput } from '../components/FormInput'
 import { translations } from '../data/translations'
 import { theme } from '../styles/theme'
 
-export function CommunityPage({ t, styles, loading, newPost, setNewPost, communityPosts, createCommunityPost, formatPostDate, formatCategory }) {
+export function CommunityPage({ t, styles, viewport, loading, newPost, setNewPost, communityPosts, createCommunityPost, formatPostDate, formatCategory }) {
+  const isMobile = viewport?.isMobile
+
   return (
     <div style={{ ...styles.section, background: theme.colors.parchment }}>
       <div style={styles.container}>
@@ -46,21 +48,21 @@ export function CommunityPage({ t, styles, loading, newPost, setNewPost, communi
             )}
             {communityPosts.map((post, i) => (
               <div key={i} style={styles.card}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-start', gap: isMobile ? 12 : 16, marginBottom: 12 }}>
                   <div>
                     <h4 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>{post.title}</h4>
-                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
                       <span style={{ ...styles.badge('#7C3AED'), fontSize: 10 }}>{formatCategory(post.category)}</span>
                       <span style={{ fontSize: 12, color: theme.colors.muted }}>{formatPostDate(post)}</span>
                     </div>
                   </div>
-                  <div style={{ fontSize: 12, color: theme.colors.muted, textAlign: 'right' }}>
+                  <div style={{ fontSize: 12, color: theme.colors.muted, textAlign: isMobile ? 'left' : 'right' }}>
                     <div>♥ {post.likes_count}</div>
                     <div>💬 {post.comments_count}</div>
                   </div>
                 </div>
                 <p style={{ color: theme.colors.muted, lineHeight: 1.65, margin: '0 0 16px', fontSize: 15 }}>{post.content}</p>
-                <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
                   {t.community.actions.map(a => (
                     <button key={a} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #E5E7EB', background: 'transparent', color: theme.colors.muted, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>{a}</button>
                   ))}

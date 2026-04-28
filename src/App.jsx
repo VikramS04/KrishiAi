@@ -33,9 +33,22 @@ const initialUserForm = {
 }
 
 const storedUserKey = 'krishiai-user'
+const getViewport = () => {
+  if (typeof window === 'undefined') {
+    return { width: 1280, isMobile: false, isTablet: false }
+  }
+
+  const width = window.innerWidth
+  return {
+    width,
+    isMobile: width < theme.breakpoints.mobile,
+    isTablet: width >= theme.breakpoints.mobile && width < theme.breakpoints.tablet,
+  }
+}
 
 export default function App() {
-  const styles = useMemo(() => createStyles(), [])
+  const [viewport, setViewport] = useState(getViewport)
+  const styles = useMemo(() => createStyles(viewport), [viewport])
   const [language, setLanguage] = useState('english')
   const [currentView, setCurrentView] = useState('home')
   const [user, setUser] = useState(null)
@@ -269,6 +282,12 @@ export default function App() {
   }
 
   useEffect(() => {
+    const handleResize = () => setViewport(getViewport())
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  useEffect(() => {
     const storedUser = localStorage.getItem(storedUserKey)
     if (!storedUser) return
 
@@ -285,13 +304,14 @@ export default function App() {
   }, [currentView, language])
 
   const pages = {
-    home: <HomePage t={t} styles={styles} setCurrentView={setCurrentView} openFAQ={openFAQ} setOpenFAQ={setOpenFAQ} />,
-    register: <RegisterPage t={t} styles={styles} loading={loading} authMode={authMode} setAuthMode={setAuthMode} userForm={userForm} setUserForm={setUserForm} loginIdentifier={loginIdentifier} setLoginIdentifier={setLoginIdentifier} loginPassword={loginPassword} setLoginPassword={setLoginPassword} createUser={createUser} loginUser={loginUser} />,
-    soil: <SoilPage t={t} styles={styles} loading={loading} soilData={soilData} setSoilData={setSoilData} soilResults={soilResults} analyzeSoil={analyzeSoil} />,
+    home: <HomePage t={t} styles={styles} viewport={viewport} setCurrentView={setCurrentView} openFAQ={openFAQ} setOpenFAQ={setOpenFAQ} />,
+    register: <RegisterPage t={t} styles={styles} viewport={viewport} loading={loading} authMode={authMode} setAuthMode={setAuthMode} userForm={userForm} setUserForm={setUserForm} loginIdentifier={loginIdentifier} setLoginIdentifier={setLoginIdentifier} loginPassword={loginPassword} setLoginPassword={setLoginPassword} createUser={createUser} loginUser={loginUser} />,
+    soil: <SoilPage t={t} styles={styles} viewport={viewport} loading={loading} soilData={soilData} setSoilData={setSoilData} soilResults={soilResults} analyzeSoil={analyzeSoil} />,
     weather: (
       <WeatherPage
         t={t}
         styles={styles}
+        viewport={viewport}
         loading={loading}
         language={language}
         weatherState={weatherState}
@@ -309,12 +329,12 @@ export default function App() {
         getDeviceWeatherData={getDeviceWeatherData}
       />
     ),
-    community: <CommunityPage t={t} styles={styles} loading={loading} newPost={newPost} setNewPost={setNewPost} communityPosts={communityPosts} createCommunityPost={createCommunityPost} formatPostDate={formatPostDate} formatCategory={formatCategory} />,
-    disease: <DiseasePage t={t} styles={styles} loading={loading} diseaseCrop={diseaseCrop} setDiseaseCrop={setDiseaseCrop} diseaseSymptoms={diseaseSymptoms} setDiseaseSymptoms={setDiseaseSymptoms} diseaseImage={diseaseImage} setDiseaseImage={setDiseaseImage} diseaseResults={diseaseResults} detectDisease={detectDisease} />,
+    community: <CommunityPage t={t} styles={styles} viewport={viewport} loading={loading} newPost={newPost} setNewPost={setNewPost} communityPosts={communityPosts} createCommunityPost={createCommunityPost} formatPostDate={formatPostDate} formatCategory={formatCategory} />,
+    disease: <DiseasePage t={t} styles={styles} viewport={viewport} loading={loading} diseaseCrop={diseaseCrop} setDiseaseCrop={setDiseaseCrop} diseaseSymptoms={diseaseSymptoms} setDiseaseSymptoms={setDiseaseSymptoms} diseaseImage={diseaseImage} setDiseaseImage={setDiseaseImage} diseaseResults={diseaseResults} detectDisease={detectDisease} />,
   }
 
   return (
-    <AppLayout currentView={currentView} setCurrentView={setCurrentView} language={language} setLanguage={setLanguage} nav={nav} user={user} logoutUser={logoutUser} t={t} styles={styles}>
+    <AppLayout currentView={currentView} setCurrentView={setCurrentView} language={language} setLanguage={setLanguage} nav={nav} user={user} logoutUser={logoutUser} t={t} styles={styles} viewport={viewport}>
       {pages[currentView] || pages.home}
     </AppLayout>
   )

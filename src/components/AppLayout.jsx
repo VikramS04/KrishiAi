@@ -1,6 +1,8 @@
 import { theme } from '../styles/theme'
 
-export function AppLayout({ children, currentView, setCurrentView, language, setLanguage, nav, user, logoutUser, t, styles }) {
+export function AppLayout({ children, currentView, setCurrentView, language, setLanguage, nav, user, logoutUser, t, styles, viewport }) {
+  const isMobile = viewport?.isMobile
+
   return (
     <div style={styles.page}>
       <nav style={styles.nav}>
@@ -16,15 +18,15 @@ export function AppLayout({ children, currentView, setCurrentView, language, set
               </button>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div style={styles.navActions}>
             <div style={{ display: 'flex', gap: 4 }}>
               <button onClick={() => setLanguage('english')} style={styles.langBtn(language === 'english')}>EN</button>
               <button onClick={() => setLanguage('hindi')} style={styles.langBtn(language === 'hindi')}>हिं</button>
             </div>
             {user ? (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <span style={{ fontSize: 14, color: theme.colors.muted }}>{t.common.hello}, {user.username}</span>
-                <button onClick={logoutUser} style={{ ...styles.outlineBtn(theme.colors.error), padding: '6px 14px', fontSize: 13 }}>{t.common.logout}</button>
+              <div style={styles.userActions}>
+                <span style={{ fontSize: 14, color: theme.colors.muted, textAlign: isMobile ? 'center' : 'left' }}>{t.common.hello}, {user.username}</span>
+                <button onClick={logoutUser} style={{ ...styles.outlineBtn(theme.colors.error), padding: '6px 14px', fontSize: 13, width: isMobile ? '100%' : 'auto' }}>{t.common.logout}</button>
               </div>
             ) : (
               <button onClick={() => setCurrentView('register')} style={styles.signInBtn}>{t.common.signIn}</button>
@@ -37,7 +39,7 @@ export function AppLayout({ children, currentView, setCurrentView, language, set
 
       <footer style={styles.footer}>
         <div style={styles.container}>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 48, marginBottom: 48 }}>
+          <div style={styles.footerGrid}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                 <div style={{ ...styles.logoLeaf, background: 'rgba(255,255,255,0.15)' }}>🌱</div>
@@ -60,7 +62,7 @@ export function AppLayout({ children, currentView, setCurrentView, language, set
               ))}
             </div>
           </div>
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.12)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={styles.footerBottom}>
             <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>{t.footer.rights}</span>
             <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>{t.footer.made}</span>
           </div>

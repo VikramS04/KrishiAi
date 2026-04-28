@@ -1,7 +1,9 @@
 import { FormInput } from '../components/FormInput'
 import { theme } from '../styles/theme'
 
-export function SoilPage({ t, styles, loading, soilData, setSoilData, soilResults, analyzeSoil }) {
+export function SoilPage({ t, styles, viewport, loading, soilData, setSoilData, soilResults, analyzeSoil }) {
+  const isMobile = viewport?.isMobile
+
   const fields = [
     { ph: t.soil.fields[0], k: 'location', type: 'text' },
     { ph: t.soil.fields[1], k: 'ph_level', type: 'number' },
@@ -24,7 +26,7 @@ export function SoilPage({ t, styles, loading, soilData, setSoilData, soilResult
 
           <div style={{ ...styles.card, marginBottom: 24 }}>
             <h3 style={{ ...styles.h3, marginBottom: 20, color: theme.colors.soil }}>{t.soil.parameters}</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
               {fields.map(f => (
                 <FormInput
                   key={f.k}
@@ -32,7 +34,7 @@ export function SoilPage({ t, styles, loading, soilData, setSoilData, soilResult
                   type={f.type}
                   value={soilData[f.k]}
                   onChange={e => setSoilData(current => ({ ...current, [f.k]: e.target.value }))}
-                  style={f.k === 'location' ? { gridColumn: 'span 2' } : {}}
+                  style={f.k === 'location' && !isMobile ? { gridColumn: 'span 2' } : {}}
                 />
               ))}
             </div>
@@ -51,7 +53,7 @@ export function SoilPage({ t, styles, loading, soilData, setSoilData, soilResult
           {soilResults && (
             <div style={styles.card}>
               <h3 style={{ ...styles.h3, color: theme.colors.leaf, marginBottom: 24 }}>{t.soil.results}</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 28 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 28 }}>
                 <div style={{ background: `${theme.colors.leaf}10`, borderRadius: 12, padding: '20px 24px' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: theme.colors.leaf, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{t.soil.healthScore}</div>
                   <div style={{ fontSize: 48, fontWeight: 700, color: theme.colors.leaf, letterSpacing: '-2px', lineHeight: 1.1 }}>{soilResults.data.health_score}<span style={{ fontSize: 20 }}>/100</span></div>
@@ -71,7 +73,7 @@ export function SoilPage({ t, styles, loading, soilData, setSoilData, soilResult
                 ))}
               </div>
               <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{t.soil.suitableCrops}</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
                 {soilResults.suitable_crops.map((c, i) => (
                   <div key={i} style={{ background: `${theme.colors.leaf}08`, border: `1px solid ${theme.colors.leaf}20`, borderRadius: 10, padding: '12px 16px' }}>
                     <div style={{ fontWeight: 600, fontSize: 14 }}>{c.crop_name}</div>
