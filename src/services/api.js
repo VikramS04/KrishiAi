@@ -40,6 +40,14 @@ export const api = {
     request(`/weather/forecast/${encodeURIComponent(location)}?days=${days}`)
   ),
 
+  getCurrentWeatherByCoordinates: ({ lat, lon }) => (
+    request(`/weather/current?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`)
+  ),
+
+  getWeatherForecastByCoordinates: ({ lat, lon }, days = 7) => (
+    request(`/weather/forecast?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&days=${days}`)
+  ),
+
   getCommunityPosts: (language) => request(`/community/posts?language=${encodeURIComponent(language)}`),
 
   createCommunityPost: (postData) => request('/community/posts', {

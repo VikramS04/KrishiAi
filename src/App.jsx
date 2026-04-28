@@ -18,6 +18,24 @@ const theme = {
   }
 }
 
+const weatherLocations = [
+  'Delhi',
+  'Mumbai',
+  'Bengaluru',
+  'Chennai',
+  'Kolkata',
+  'Hyderabad',
+  'Pune',
+  'Ahmedabad',
+  'Jaipur',
+  'Lucknow',
+  'Bhopal',
+  'Indore',
+  'Patna',
+  'Ludhiana',
+  'Nagpur',
+]
+
 export default function App() {
   const [language, setLanguage] = useState('english')
   const [currentView, setCurrentView] = useState('home')
@@ -27,6 +45,7 @@ export default function App() {
   const [soilData, setSoilData] = useState({ location: '', ph_level: '', nitrogen: '', phosphorus: '', potassium: '', organic_matter: '', moisture_content: '' })
   const [soilResults, setSoilResults] = useState(null)
   const [weatherLocation, setWeatherLocation] = useState('Delhi')
+  const [weatherLocationMode, setWeatherLocationMode] = useState('preset')
   const [weatherData, setWeatherData] = useState(null)
   const [weatherForecast, setWeatherForecast] = useState(null)
   const [communityPosts, setCommunityPosts] = useState([])
@@ -86,10 +105,16 @@ export default function App() {
   }
 
   const getWeatherData = async () => {
+    const location = weatherLocation.trim()
+    if (!location) {
+      alert('Please select or enter a location first.')
+      return
+    }
+
     const result = await runRequest(async () => {
       const [current, forecast] = await Promise.all([
-        api.getCurrentWeather(weatherLocation.trim()),
-        api.getWeatherForecast(weatherLocation.trim(), 7),
+        api.getCurrentWeather(location),
+        api.getWeatherForecast(location, 7),
       ])
       return { current, forecast }
     }, 'Weather error')
@@ -98,6 +123,46 @@ export default function App() {
       setWeatherData(result.current.data)
       setWeatherForecast(result.forecast.data)
     }
+  }
+
+  const getDeviceWeatherData = async () => {
+    if (!navigator.geolocation) {
+      alert('Location access is not supported in this browser. Please choose a city from the list.')
+      return
+    }
+
+    setLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const coordinates = {
+            lat: coords.latitude.toFixed(4),
+            lon: coords.longitude.toFixed(4),
+          }
+          const [current, forecast] = await Promise.all([
+            api.getCurrentWeatherByCoordinates(coordinates),
+            api.getWeatherForecastByCoordinates(coordinates, 7),
+          ])
+
+          setWeatherData(current.data)
+          setWeatherForecast(forecast.data)
+          setWeatherLocation(`${current.data.location}, ${current.data.country}`)
+          setWeatherLocationMode('custom')
+        } catch (e) {
+          alert(`Location weather error: ${e.message}`)
+        } finally {
+          setLoading(false)
+        }
+      },
+      (error) => {
+        const message = error.code === error.PERMISSION_DENIED
+          ? 'Location permission was denied. Please choose a city from the list.'
+          : 'Could not detect your location. Please choose a city from the list.'
+        alert(message)
+        setLoading(false)
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 10 * 60 * 1000 }
+    )
   }
 
   const loadCommunityPosts = async () => {
@@ -445,12 +510,37 @@ export default function App() {
             <p style={{ color: theme.colors.muted, fontSize: 17 }}>Hyperlocal weather data tailored for farming decisions.</p>
           </div>
           <div style={{ ...styles.card, marginBottom: 24 }}>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <FormInput placeholder="Enter city or district (e.g. Delhi, Jaipur)" value={weatherLocation} onChange={e => setWeatherLocation(e.target.value)} style={{ flex: 1 }} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, alignItems: 'center' }}>
+              <select
+                value={weatherLocationMode === 'preset' ? weatherLocation : ''}
+                onChange={e => {
+                  setWeatherLocationMode('preset')
+                  setWeatherLocation(e.target.value)
+                }}
+                style={{ ...styles.input }}
+              >
+                <option value="">Select a city</option>
+                {weatherLocations.map(location => <option key={location} value={location}>{location}</option>)}
+              </select>
+              <FormInput
+                placeholder="Or enter village / district"
+                value={weatherLocationMode === 'custom' ? weatherLocation : ''}
+                onChange={e => {
+                  setWeatherLocationMode('custom')
+                  setWeatherLocation(e.target.value)
+                }}
+              />
               <button onClick={getWeatherData} disabled={loading} style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: theme.colors.sky, color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', opacity: loading ? 0.6 : 1 }}>
                 {loading ? '...' : 'Get Forecast'}
               </button>
             </div>
+            <button
+              onClick={getDeviceWeatherData}
+              disabled={loading}
+              style={{ ...styles.outlineBtn(theme.colors.sky), marginTop: 12, width: '100%', opacity: loading ? 0.6 : 1 }}
+            >
+              Use My Current Location
+            </button>
           </div>
           {weatherData && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
