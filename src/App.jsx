@@ -24,6 +24,7 @@ const initialSoilData = {
 const initialUserForm = {
   username: '',
   email: '',
+  password: '',
   full_name: '',
   phone: '',
   location: '',
@@ -58,6 +59,7 @@ export default function App() {
   const [diseaseResults, setDiseaseResults] = useState(null)
   const [userForm, setUserForm] = useState(initialUserForm)
   const [loginIdentifier, setLoginIdentifier] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
 
   const t = translations[language]
   const selectedState = indiaLocations.find(item => item.state === weatherState)
@@ -215,6 +217,11 @@ export default function App() {
   }
 
   const createUser = async (userData) => {
+    if (!userData.password || userData.password.length < 8) {
+      alert(t.auth.passwordHelp)
+      return
+    }
+
     const result = await runRequest(
       () => api.createUser({ ...userData, language_preference: language }),
       t.errors.registration
@@ -226,18 +233,24 @@ export default function App() {
       setCurrentView('home')
       setAuthMode('login')
       setLoginIdentifier(result.data.email || result.data.username || '')
+      setLoginPassword('')
+      setUserForm(initialUserForm)
     }
   }
 
-  const loginUser = async (identifier) => {
+  const loginUser = async (identifier, password) => {
     const trimmedIdentifier = identifier.trim()
     if (!trimmedIdentifier) {
       alert(t.auth.loginField)
       return
     }
+    if (!password) {
+      alert(t.auth.passwordField)
+      return
+    }
 
     const result = await runRequest(
-      () => api.loginUser(trimmedIdentifier),
+      () => api.loginUser({ identifier: trimmedIdentifier, password }),
       t.errors.login
     )
 
@@ -245,11 +258,13 @@ export default function App() {
       setUser(result.data)
       localStorage.setItem(storedUserKey, JSON.stringify(result.data))
       setCurrentView('home')
+      setLoginPassword('')
     }
   }
 
   const logoutUser = () => {
     setUser(null)
+    setLoginPassword('')
     localStorage.removeItem(storedUserKey)
   }
 
@@ -271,7 +286,7 @@ export default function App() {
 
   const pages = {
     home: <HomePage t={t} styles={styles} setCurrentView={setCurrentView} openFAQ={openFAQ} setOpenFAQ={setOpenFAQ} />,
-    register: <RegisterPage t={t} styles={styles} loading={loading} authMode={authMode} setAuthMode={setAuthMode} userForm={userForm} setUserForm={setUserForm} loginIdentifier={loginIdentifier} setLoginIdentifier={setLoginIdentifier} createUser={createUser} loginUser={loginUser} />,
+    register: <RegisterPage t={t} styles={styles} loading={loading} authMode={authMode} setAuthMode={setAuthMode} userForm={userForm} setUserForm={setUserForm} loginIdentifier={loginIdentifier} setLoginIdentifier={setLoginIdentifier} loginPassword={loginPassword} setLoginPassword={setLoginPassword} createUser={createUser} loginUser={loginUser} />,
     soil: <SoilPage t={t} styles={styles} loading={loading} soilData={soilData} setSoilData={setSoilData} soilResults={soilResults} analyzeSoil={analyzeSoil} />,
     weather: (
       <WeatherPage

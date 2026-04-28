@@ -1,15 +1,16 @@
 import { FormInput } from '../components/FormInput'
 import { theme } from '../styles/theme'
 
-export function RegisterPage({ t, styles, loading, authMode, setAuthMode, userForm, setUserForm, loginIdentifier, setLoginIdentifier, createUser, loginUser }) {
+export function RegisterPage({ t, styles, loading, authMode, setAuthMode, userForm, setUserForm, loginIdentifier, setLoginIdentifier, loginPassword, setLoginPassword, createUser, loginUser }) {
   const fields = [
     { ph: t.register.fields[0], k: 'username', type: 'text' },
     { ph: t.register.fields[1], k: 'email', type: 'email' },
-    { ph: t.register.fields[2], k: 'full_name', type: 'text' },
-    { ph: t.register.fields[3], k: 'phone', type: 'tel' },
-    { ph: t.register.fields[4], k: 'location', type: 'text' },
-    { ph: t.register.fields[5], k: 'farm_size', type: 'number' },
-    { ph: t.register.fields[6], k: 'primary_crops', type: 'text' },
+    { ph: t.register.fields[2], k: 'password', type: 'password' },
+    { ph: t.register.fields[3], k: 'full_name', type: 'text' },
+    { ph: t.register.fields[4], k: 'phone', type: 'tel' },
+    { ph: t.register.fields[5], k: 'location', type: 'text' },
+    { ph: t.register.fields[6], k: 'farm_size', type: 'number' },
+    { ph: t.register.fields[7], k: 'primary_crops', type: 'text' },
   ]
 
   return (
@@ -37,7 +38,13 @@ export function RegisterPage({ t, styles, loading, authMode, setAuthMode, userFo
                     value={loginIdentifier}
                     onChange={e => setLoginIdentifier(e.target.value)}
                   />
-                  <button onClick={() => loginUser(loginIdentifier)} disabled={loading} style={{ ...styles.primaryBtn(), marginTop: 8, opacity: loading ? 0.6 : 1 }}>
+                  <FormInput
+                    placeholder={t.auth.passwordField}
+                    type="password"
+                    value={loginPassword}
+                    onChange={e => setLoginPassword(e.target.value)}
+                  />
+                  <button onClick={() => loginUser(loginIdentifier, loginPassword)} disabled={loading} style={{ ...styles.primaryBtn(), marginTop: 8, opacity: loading ? 0.6 : 1 }}>
                     {loading ? t.auth.signingIn : `${t.auth.loginAction} →`}
                   </button>
                 </>

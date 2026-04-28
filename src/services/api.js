@@ -43,9 +43,9 @@ export const api = {
     body: JSON.stringify(userData),
   }),
 
-  loginUser: (identifier) => request('/users/login', {
+  loginUser: ({ identifier, password }) => request('/users/login', {
     method: 'POST',
-    body: JSON.stringify({ identifier }),
+    body: JSON.stringify({ identifier, password }),
   }),
 
   analyzeSoil: (soilData) => request('/soil/analyze', {
