@@ -31,11 +31,14 @@ const initialUserForm = {
   primary_crops: '',
 }
 
+const storedUserKey = 'krishiai-user'
+
 export default function App() {
   const styles = useMemo(() => createStyles(), [])
   const [language, setLanguage] = useState('english')
   const [currentView, setCurrentView] = useState('home')
   const [user, setUser] = useState(null)
+  const [authMode, setAuthMode] = useState('register')
   const [loading, setLoading] = useState(false)
   const [openFAQ, setOpenFAQ] = useState(null)
 
@@ -54,6 +57,7 @@ export default function App() {
   const [diseaseSymptoms, setDiseaseSymptoms] = useState('')
   const [diseaseResults, setDiseaseResults] = useState(null)
   const [userForm, setUserForm] = useState(initialUserForm)
+  const [loginIdentifier, setLoginIdentifier] = useState('')
 
   const t = translations[language]
   const selectedState = indiaLocations.find(item => item.state === weatherState)
@@ -218,9 +222,47 @@ export default function App() {
 
     if (result) {
       setUser(result.data)
+      localStorage.setItem(storedUserKey, JSON.stringify(result.data))
+      setCurrentView('home')
+      setAuthMode('login')
+      setLoginIdentifier(result.data.email || result.data.username || '')
+    }
+  }
+
+  const loginUser = async (identifier) => {
+    const trimmedIdentifier = identifier.trim()
+    if (!trimmedIdentifier) {
+      alert(t.auth.loginField)
+      return
+    }
+
+    const result = await runRequest(
+      () => api.loginUser(trimmedIdentifier),
+      t.errors.login
+    )
+
+    if (result) {
+      setUser(result.data)
+      localStorage.setItem(storedUserKey, JSON.stringify(result.data))
       setCurrentView('home')
     }
   }
+
+  const logoutUser = () => {
+    setUser(null)
+    localStorage.removeItem(storedUserKey)
+  }
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem(storedUserKey)
+    if (!storedUser) return
+
+    try {
+      setUser(JSON.parse(storedUser))
+    } catch (_) {
+      localStorage.removeItem(storedUserKey)
+    }
+  }, [])
 
   useEffect(() => {
     if (currentView === 'community') loadCommunityPosts()
@@ -229,7 +271,7 @@ export default function App() {
 
   const pages = {
     home: <HomePage t={t} styles={styles} setCurrentView={setCurrentView} openFAQ={openFAQ} setOpenFAQ={setOpenFAQ} />,
-    register: <RegisterPage t={t} styles={styles} loading={loading} userForm={userForm} setUserForm={setUserForm} createUser={createUser} />,
+    register: <RegisterPage t={t} styles={styles} loading={loading} authMode={authMode} setAuthMode={setAuthMode} userForm={userForm} setUserForm={setUserForm} loginIdentifier={loginIdentifier} setLoginIdentifier={setLoginIdentifier} createUser={createUser} loginUser={loginUser} />,
     soil: <SoilPage t={t} styles={styles} loading={loading} soilData={soilData} setSoilData={setSoilData} soilResults={soilResults} analyzeSoil={analyzeSoil} />,
     weather: (
       <WeatherPage
@@ -257,7 +299,7 @@ export default function App() {
   }
 
   return (
-    <AppLayout currentView={currentView} setCurrentView={setCurrentView} language={language} setLanguage={setLanguage} nav={nav} user={user} setUser={setUser} t={t} styles={styles}>
+    <AppLayout currentView={currentView} setCurrentView={setCurrentView} language={language} setLanguage={setLanguage} nav={nav} user={user} logoutUser={logoutUser} t={t} styles={styles}>
       {pages[currentView] || pages.home}
     </AppLayout>
   )

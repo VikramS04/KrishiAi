@@ -1,6 +1,6 @@
 import { theme } from '../styles/theme'
 
-export function AppLayout({ children, currentView, setCurrentView, language, setLanguage, nav, user, setUser, t, styles }) {
+export function AppLayout({ children, currentView, setCurrentView, language, setLanguage, nav, user, logoutUser, t, styles }) {
   return (
     <div style={styles.page}>
       <nav style={styles.nav}>
@@ -24,7 +24,7 @@ export function AppLayout({ children, currentView, setCurrentView, language, set
             {user ? (
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <span style={{ fontSize: 14, color: theme.colors.muted }}>{t.common.hello}, {user.username}</span>
-                <button onClick={() => setUser(null)} style={{ ...styles.outlineBtn(theme.colors.error), padding: '6px 14px', fontSize: 13 }}>{t.common.logout}</button>
+                <button onClick={logoutUser} style={{ ...styles.outlineBtn(theme.colors.error), padding: '6px 14px', fontSize: 13 }}>{t.common.logout}</button>
               </div>
             ) : (
               <button onClick={() => setCurrentView('register')} style={styles.signInBtn}>{t.common.signIn}</button>

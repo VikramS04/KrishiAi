@@ -3,6 +3,7 @@ export const translations = {
     nav: { home: 'Home', soil: 'Soil Analysis', disease: 'Disease Detection', weather: 'Weather', community: 'Community' },
     common: {
       signIn: 'Sign In',
+      signUp: 'Sign Up',
       logout: 'Logout',
       hello: 'Hello',
       open: 'Open',
@@ -29,6 +30,16 @@ export const translations = {
       post: 'Post creation failed',
       detection: 'Detection failed',
       registration: 'Registration failed',
+      login: 'Login failed',
+    },
+    auth: {
+      loginTitle: 'Welcome Back',
+      loginSubtitle: 'Sign in with your username or email to continue',
+      loginField: 'Username or email',
+      loginAction: 'Log In',
+      loginTab: 'Log In',
+      signupTab: 'Sign Up',
+      signingIn: 'Signing in...',
     },
     home: {
       badge: 'AI-Powered Agriculture',
@@ -154,6 +165,7 @@ export const translations = {
     nav: { home: 'होम', soil: 'मिट्टी विश्लेषण', disease: 'रोग पहचान', weather: 'मौसम', community: 'समुदाय' },
     common: {
       signIn: 'साइन इन',
+      signUp: 'साइन अप',
       logout: 'लॉगआउट',
       hello: 'नमस्ते',
       open: 'खोलें',
@@ -180,6 +192,16 @@ export const translations = {
       post: 'पोस्ट बनाने में समस्या',
       detection: 'पहचान विफल',
       registration: 'पंजीकरण विफल',
+      login: 'लॉगिन विफल',
+    },
+    auth: {
+      loginTitle: 'फिर से स्वागत है',
+      loginSubtitle: 'जारी रखने के लिए अपना यूजरनेम या ईमेल दर्ज करें',
+      loginField: 'यूजरनेम या ईमेल',
+      loginAction: 'लॉग इन',
+      loginTab: 'लॉग इन',
+      signupTab: 'साइन अप',
+      signingIn: 'लॉग इन हो रहा है...',
     },
     home: {
       badge: 'एआई आधारित कृषि',
