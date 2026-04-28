@@ -1,0 +1,61 @@
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
+
+const parseResponse = async (response) => {
+  const payload = await response.json().catch(() => ({}))
+
+  if (!response.ok || payload.success === false) {
+    throw new Error(payload.error || `Request failed with status ${response.status}`)
+  }
+
+  return payload
+}
+
+const request = async (path, options = {}) => {
+  const headers = options.body instanceof FormData
+    ? options.headers
+    : { 'Content-Type': 'application/json', ...options.headers }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers,
+  })
+
+  return parseResponse(response)
+}
+
+export const api = {
+  createUser: (userData) => request('/users', {
+    method: 'POST',
+    body: JSON.stringify(userData),
+  }),
+
+  analyzeSoil: (soilData) => request('/soil/analyze', {
+    method: 'POST',
+    body: JSON.stringify(soilData),
+  }),
+
+  getCurrentWeather: (location) => request(`/weather/current/${encodeURIComponent(location)}`),
+
+  getWeatherForecast: (location, days = 7) => (
+    request(`/weather/forecast/${encodeURIComponent(location)}?days=${days}`)
+  ),
+
+  getCommunityPosts: (language) => request(`/community/posts?language=${encodeURIComponent(language)}`),
+
+  createCommunityPost: (postData) => request('/community/posts', {
+    method: 'POST',
+    body: JSON.stringify(postData),
+  }),
+
+  detectDisease: (diseaseData) => request('/disease/detect', {
+    method: 'POST',
+    body: JSON.stringify(diseaseData),
+  }),
+
+  uploadDiseaseImage: (formData) => request('/disease/upload', {
+    method: 'POST',
+    body: formData,
+  }),
+}
+
+export { API_BASE_URL }
