@@ -1,660 +1,347 @@
 import { useState, useEffect } from 'react'
-import './App.css'
-import FAQSecion  from './components/ui/FAQSection'
-import logo from './assets/KrishiAi.png'
 
-/* const API_BASE_URL = 'http://127.0.0.1:5001/api' */
-/*const API_BASE_URL = 'https://flask-hello-world-lovat-xi.vercel.app/api' */
 const API_BASE_URL = 'https://krishi-ai-new-backend.vercel.app/api'
 
+const theme = {
+  colors: {
+    leaf: '#2D6A4F',
+    leafLight: '#40916C',
+    leafDark: '#1B4332',
+    soil: '#8B5E3C',
+    soilLight: '#A97C50',
+    sky: '#1E6091',
+    sun: '#E9A319',
+    cream: '#FEFAE0',
+    parchment: '#F7F0E6',
+    dark: '#1A1A1A',
+    muted: '#6B7280',
+    error: '#DC2626',
+  }
+}
 
-function App() {
+export default function App() {
   const [language, setLanguage] = useState('english')
   const [currentView, setCurrentView] = useState('home')
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  
-  // Soil Analysis State
-  const [soilData, setSoilData] = useState({
-    location: '',
-    ph_level: '',
-    nitrogen: '',
-    phosphorus: '',
-    potassium: '',
-    organic_matter: '',
-    moisture_content: ''
-  })
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  const [soilData, setSoilData] = useState({ location: '', ph_level: '', nitrogen: '', phosphorus: '', potassium: '', organic_matter: '', moisture_content: '' })
   const [soilResults, setSoilResults] = useState(null)
-  
-  // Weather State
   const [weatherLocation, setWeatherLocation] = useState('Delhi')
   const [weatherData, setWeatherData] = useState(null)
   const [weatherForecast, setWeatherForecast] = useState(null)
-  
-  // Community State
   const [communityPosts, setCommunityPosts] = useState([])
   const [newPost, setNewPost] = useState({ title: '', content: '', category: '' })
-  
-  // Disease Detection State
   const [diseaseImage, setDiseaseImage] = useState(null)
   const [diseaseResults, setDiseaseResults] = useState(null)
-  
-  // User Registration State
-  const [userForm, setUserForm] = useState({
-    username: '',
-    email: '',
-    full_name: '',
-    phone: '',
-    location: '',
-    farm_size: '',
-    primary_crops: ''
-  })
+  const [userForm, setUserForm] = useState({ username: '', email: '', full_name: '', phone: '', location: '', farm_size: '', primary_crops: '' })
 
-  const translations = {
-    english: {
-      home: 'Home',
-      soilAnalysis: 'Soil Analysis',
-      cropAdvisory: 'Crop Advisory',
-      weather: 'Weather',
-      community: 'Community',
-      search: 'Search...',
-      login: 'Login',
-      getStarted: 'Get Started',
-      learnMore: 'Learn More',
-      uploadSample: 'Upload Sample',
-      getAdvice: 'Get Advice',
-      viewForecast: 'View Forecast',
-      joinCommunity: 'Join Community',
-      modernAgriculture: 'Modern Agriculture',
-      empoweringFarmers: 'Empowering farmers with data-driven insights and community support',
-      farmerDashboard: 'Farmer Dashboard',
-      realTimeInsights: 'Real-time insights',
-      soilAnalysisDesc: 'Comprehensive soil health assessment with AI-powered recommendations',
-      cropAdvisoryDesc: 'Expert guidance and personalized crop recommendations',
-      weatherForecastDesc: 'Accurate weather predictions for better farming decisions',
-      communityForumDesc: 'Connect with fellow farmers and share experiences',
-      trustedByFarmers: 'Trusted by Farmers Nationwide',
-      joinThousands: 'Join thousands of farmers who are already benefiting from our platform',
-      activeFarmers: 'Active Farmers',
-      soilAnalyses: 'Soil Analyses',
-      predictionAccuracy: 'Prediction Accuracy',
-      support247: '24/7 Support',
-      website: 'Website',
-      services: 'Services',
-      support: 'Support',
-      contactUs: 'Contact Us',
-      privacyPolicy: 'Privacy Policy',
-      termsOfService: 'Terms of Service'
-    },
-    hindi: {
-      home: 'होम',
-      soilAnalysis: 'मिट्टी विश्लेषण',
-      cropAdvisory: 'फसल सलाह',
-      weather: 'मौसम',
-      community: 'समुदाय',
-      search: 'खोजें...',
-      login: 'लॉगिन',
-      getStarted: 'शुरू करें',
-      learnMore: 'और जानें',
-      uploadSample: 'नमूना अपलोड करें',
-      getAdvice: 'सलाह लें',
-      viewForecast: 'पूर्वानुमान देखें',
-      joinCommunity: 'समुदाय में शामिल हों',
-      modernAgriculture: 'आधुनिक कृषि',
-      empoweringFarmers: 'डेटा-संचालित अंतर्दृष्टि और सामुदायिक सहायता के साथ किसानों को सशक्त बनाना',
-      farmerDashboard: 'Farmer Dashboard',
-      realTimeInsights: 'Real-time insights',
-      soilAnalysisDesc: 'AI-संचालित सिफारिशों के साथ व्यापक मिट्टी स्वास्थ्य मूल्यांकन',
-      cropAdvisoryDesc: 'विशेषज्ञ मार्गदर्शन और व्यक्तिगत फसल सिफारिशें',
-      weatherForecastDesc: 'बेहतर कृषि निर्णयों के लिए सटीक मौसम पूर्वानुमान',
-      communityForumDesc: 'साथी किसानों से जुड़ें और अनुभव साझा करें',
-      trustedByFarmers: 'देशभर के किसानों द्वारा भरोसेमंद',
-      joinThousands: 'हजारों किसानों से जुड़ें जो पहले से ही हमारे प्लेटफॉर्म से लाभ उठा रहे हैं',
-      activeFarmers: 'सक्रिय किसान',
-      soilAnalyses: 'मिट्टी विश्लेषण',
-      predictionAccuracy: 'भविष्यवाणी सटीकता',
-      support247: '24/7 सहायता',
-      website: 'वेबसाइट',
-      services: 'सेवाएं',
-      support: 'सहायता',
-      contactUs: 'संपर्क करें',
-      privacyPolicy: 'गोपनीयता नीति',
-      termsOfService: 'सेवा की शर्तें'
-    }
-  }
+  const t = {
+    english: { home: 'Home', soil: 'Soil Analysis', disease: 'Disease Detection', weather: 'Weather', community: 'Community', login: 'Sign In' },
+    hindi: { home: 'होम', soil: 'मिट्टी विश्लेषण', disease: 'रोग पहचान', weather: 'मौसम', community: 'समुदाय', login: 'लॉगिन' }
+  }[language]
 
-  const t = translations[language]
-
-  // API Functions
-  const createUser = async (userData) => {
-    try {
-      setLoading(true)
-      const response = await fetch(`${API_BASE_URL}/users`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...userData,
-          language_preference: language
-        })
-      })
-      const result = await response.json()
-      if (result.success) {
-        setUser(result.data)
-        alert('User registered successfully!')
-        setCurrentView('home')
-      } else {
-        alert('Registration failed: ' + result.error)
-      }
-    } catch (error) {
-      alert('Registration error: ' + error.message)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const nav = [
+    { id: 'home', label: t.home, icon: '⌂', accent: theme.colors.leaf },
+    { id: 'soil', label: t.soil, icon: '◎', accent: theme.colors.soil },
+    { id: 'disease', label: t.disease, icon: '⚕', accent: theme.colors.error },
+    { id: 'weather', label: t.weather, icon: '☁', accent: theme.colors.sky },
+    { id: 'community', label: t.community, icon: '◈', accent: '#7C3AED' },
+  ]
 
   const analyzeSoil = async () => {
-    /*if (!user) {
-      alert('Please register first to use soil analysis')
-      setCurrentView('register')
-      return
-    }*/
-    
-    try {
-      setLoading(true)
-      const response = await fetch(`${API_BASE_URL}/soil/analyze`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: 1,
-          ...soilData
-        })
-      })
-      const result = await response.json()
-      if (result.success) {
-        setSoilResults(result)
-        alert('Soil analysis completed successfully!')
-      } else {
-        alert('Soil analysis failed: ' + result.error)
-      }
-    } catch (error) {
-      alert('Soil analysis error: ' + error.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const getCropRecommendations = async () => {
-    /*if (!user) {
-      alert('Please register first to get crop recommendations')
-      setCurrentView('register')
-      return
-    }*/    
-    try {
-      setLoading(true)
-      const response = await fetch(`${API_BASE_URL}/crops/recommend`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: 1
-      })
-      })
-      const result = await response.json()
-      if (result.success) {
-        alert('Crop recommendations generated successfully!')
-        console.log('Crop recommendations:', result.data)
-      } else {
-        alert('Failed to get crop recommendations: ' + result.error)
-      }
-    } catch (error) {
-      alert('Crop recommendation error: ' + error.message)
-    } finally {
-      setLoading(false)
-    }
+    try { setLoading(true); const r = await fetch(`${API_BASE_URL}/soil/analyze`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: 1, ...soilData }) }); const result = await r.json(); if (result.success) setSoilResults(result); else alert('Soil analysis failed: ' + result.error); } catch (e) { alert('Error: ' + e.message) } finally { setLoading(false) }
   }
 
   const getWeatherData = async () => {
-    try {
-      setLoading(true)
-      const [currentResponse, forecastResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/weather/current/${weatherLocation}`),
-        fetch(`${API_BASE_URL}/weather/forecast/${weatherLocation}?days=7`)
-      ])
-      
-      const currentResult = await currentResponse.json()
-      const forecastResult = await forecastResponse.json()
-      
-      if (currentResult.success) {
-        setWeatherData(currentResult.data)
-      }
-      if (forecastResult.success) {
-        setWeatherForecast(forecastResult.data)
-      }
-    } catch (error) {
-      alert('Weather data error: ' + error.message)
-    } finally {
-      setLoading(false)
-    }
+    try { setLoading(true); const [cr, fr] = await Promise.all([fetch(`${API_BASE_URL}/weather/current/${weatherLocation}`), fetch(`${API_BASE_URL}/weather/forecast/${weatherLocation}?days=7`)]); const cd = await cr.json(); const fd = await fr.json(); if (cd.success) setWeatherData(cd.data); if (fd.success) setWeatherForecast(fd.data); } catch (e) { alert('Weather error: ' + e.message) } finally { setLoading(false) }
   }
 
   const loadCommunityPosts = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch(`${API_BASE_URL}/community/posts?language=${language}`)
-      const result = await response.json()
-      if (result.success) {
-        setCommunityPosts(result.data)
-      }
-    } catch (error) {
-      console.error('Failed to load community posts:', error)
-    } finally {
-      setLoading(false)
-    }
+    try { setLoading(true); const r = await fetch(`${API_BASE_URL}/community/posts?language=${language}`); const result = await r.json(); if (result.success) setCommunityPosts(result.data); } catch (e) { console.error(e) } finally { setLoading(false) }
   }
 
   const createCommunityPost = async () => {
-    /*if (!user) {
-      alert('Please register first to create posts')
-      setCurrentView('register')
-      return
-    }*/
-    
-    try {
-      setLoading(true)
-      const response = await fetch(`${API_BASE_URL}/community/posts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: 1,
-          ...newPost,
-          language: language
-        })
-      })
-      const result = await response.json()
-      if (result.success) {
-        alert('Post created successfully!')
-        setNewPost({ title: '', content: '', category: '' })
-        loadCommunityPosts()
-      } else {
-        alert('Failed to create post: ' + result.error)
-      }
-    } catch (error) {
-      alert('Post creation error: ' + error.message)
-    } finally {
-      setLoading(false)
-    }
+    try { setLoading(true); const r = await fetch(`${API_BASE_URL}/community/posts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: 1, ...newPost, language }) }); const result = await r.json(); if (result.success) { setNewPost({ title: '', content: '', category: '' }); loadCommunityPosts(); } else alert('Failed: ' + result.error); } catch (e) { alert('Error: ' + e.message) } finally { setLoading(false) }
   }
 
   const detectDisease = async () => {
-    /*if (!user) {
-      alert('Please register first to use disease detection')
-      setCurrentView('register')
-      return
-    }*/
-    
-    try {
-      setLoading(true)
-      const response = await fetch(`${API_BASE_URL}/disease/detect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: 1,
-          crop_type: 'Tomato' // Default for demo
-        })
-      })
-      const result = await response.json()
-      if (result.success) {
-        setDiseaseResults(result)
-        alert('Disease detection completed successfully!')
-      } else {
-        alert('Disease detection failed: ' + result.error)
-      }
-    } catch (error) {
-      alert('Disease detection error: ' + error.message)
-    } finally {
-      setLoading(false)
-    }
+    try { setLoading(true); const r = await fetch(`${API_BASE_URL}/disease/detect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: 1, crop_type: 'Tomato' }) }); const result = await r.json(); if (result.success) setDiseaseResults(result); else alert('Detection failed: ' + result.error); } catch (e) { alert('Error: ' + e.message) } finally { setLoading(false) }
   }
 
-  // Load initial data
+  const createUser = async (userData) => {
+    try { setLoading(true); const r = await fetch(`${API_BASE_URL}/users`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...userData, language_preference: language }) }); const result = await r.json(); if (result.success) { setUser(result.data); setCurrentView('home'); } else alert('Registration failed: ' + result.error); } catch (e) { alert('Error: ' + e.message) } finally { setLoading(false) }
+  }
+
   useEffect(() => {
-    if (currentView === 'community') {
-      loadCommunityPosts()
-    }
-    if (currentView === 'weather') {
-      getWeatherData()
-    }
+    if (currentView === 'community') loadCommunityPosts()
+    if (currentView === 'weather') getWeatherData()
   }, [currentView, language])
 
+  const styles = {
+    page: { minHeight: '100vh', background: theme.colors.parchment, fontFamily: "'Georgia', 'Times New Roman', serif", color: theme.colors.dark },
+    nav: { background: '#fff', borderBottom: `2px solid ${theme.colors.leaf}`, position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 12px rgba(45,106,79,0.08)' },
+    navInner: { maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 68 },
+    logo: { display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', cursor: 'pointer' },
+    logoText: { fontSize: 22, fontWeight: 700, color: theme.colors.leafDark, letterSpacing: '-0.5px' },
+    logoLeaf: { width: 36, height: 36, background: `linear-gradient(135deg, ${theme.colors.leaf}, ${theme.colors.leafDark})`, borderRadius: '50% 50% 50% 10%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#fff' },
+    navLinks: { display: 'flex', gap: 4, alignItems: 'center' },
+    navBtn: (active, accent) => ({ padding: '8px 16px', borderRadius: 8, border: 'none', background: active ? `${accent}18` : 'transparent', color: active ? accent : theme.colors.muted, fontFamily: 'inherit', fontSize: 14, fontWeight: active ? 600 : 400, cursor: 'pointer', transition: 'all 0.15s', borderBottom: active ? `2px solid ${accent}` : '2px solid transparent' }),
+    langBtn: (active) => ({ padding: '4px 10px', borderRadius: 6, border: `1.5px solid ${active ? theme.colors.leaf : '#E5E7EB'}`, background: active ? theme.colors.leaf : '#fff', color: active ? '#fff' : theme.colors.muted, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }),
+    signInBtn: { padding: '8px 20px', borderRadius: 8, border: 'none', background: theme.colors.leaf, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+    container: { maxWidth: 1100, margin: '0 auto', padding: '0 24px' },
+    section: { padding: '64px 0' },
+    badge: (color) => ({ display: 'inline-block', padding: '4px 12px', borderRadius: 20, background: `${color}18`, color, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }),
+    h1: { fontSize: 56, fontWeight: 700, lineHeight: 1.08, letterSpacing: '-2px', margin: 0, color: '#fff' },
+    h2: { fontSize: 36, fontWeight: 700, letterSpacing: '-1px', margin: '0 0 8px', color: theme.colors.leafDark },
+    h3: { fontSize: 22, fontWeight: 700, letterSpacing: '-0.5px', margin: '0 0 4px' },
+    card: { background: '#fff', borderRadius: 16, border: '1px solid #E9ECEF', padding: 28, transition: 'box-shadow 0.2s' },
+    input: { width: '100%', padding: '12px 16px', borderRadius: 10, border: '1.5px solid #E5E7EB', fontFamily: 'inherit', fontSize: 15, color: theme.colors.dark, background: '#FAFAFA', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.15s' },
+    primaryBtn: (color = theme.colors.leaf) => ({ padding: '13px 28px', borderRadius: 10, border: 'none', background: color, color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'opacity 0.15s', letterSpacing: '-0.2px' }),
+    outlineBtn: (color = theme.colors.leaf) => ({ padding: '11px 24px', borderRadius: 10, border: `2px solid ${color}`, background: 'transparent', color, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }),
+    statCard: { textAlign: 'center', padding: '32px 24px', background: 'rgba(255,255,255,0.12)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.2)' },
+    footer: { background: theme.colors.leafDark, color: '#fff', padding: '60px 0 32px' },
+  }
+
+  const FAQ = [
+    { q: 'How accurate is the soil analysis?', a: 'Our AI-powered analysis has a 94% accuracy rate, cross-referenced with regional soil databases and expert agronomist knowledge.' },
+    { q: 'Which crops does disease detection support?', a: 'Currently we support 50+ crops including wheat, rice, tomato, potato, and maize. We expand our database monthly.' },
+    { q: 'Is the weather forecast farming-specific?', a: 'Yes — beyond standard weather, we provide agricultural indices like evapotranspiration, soil moisture forecasts, and sowing window recommendations.' },
+    { q: 'How do I get started?', a: 'Create your farmer profile, enter your location and farm details, and immediately access all tools. No subscription required for basic features.' },
+  ]
+
+  const [openFAQ, setOpenFAQ] = useState(null)
+
   const renderHome = () => (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-green-600 to-green-700 text-white py-20">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+    <div>
+      {/* Hero */}
+      <div style={{ background: `linear-gradient(135deg, ${theme.colors.leafDark} 0%, ${theme.colors.leaf} 60%, ${theme.colors.leafLight} 100%)`, padding: '80px 0 96px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: -60, right: -60, width: 400, height: 400, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -80, left: '40%', width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.03)', pointerEvents: 'none' }} />
+        <div style={styles.container}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
             <div>
-              <h1 className="text-5xl font-bold mb-6">{t.modernAgriculture}</h1>
-              <p className="text-xl mb-8">{t.empoweringFarmers}</p>
-              <div className="space-x-4">
-                <button 
-                  onClick={() => setCurrentView('register')}
-                  className="bg-white text-green-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-                >
-                  {t.getStarted}
-                </button>
-                <button 
-                  onClick={() => setCurrentView('about')}
-                  className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-green-600 transition-colors"
-                >
-                  {t.learnMore}
-                </button>
+              <div style={{ ...styles.badge('#90E0B0'), marginBottom: 20, fontSize: 12 }}>🌱 AI-Powered Agriculture</div>
+              <h1 style={styles.h1}>Smart Farming<br />Starts Here</h1>
+              <p style={{ fontSize: 19, color: 'rgba(255,255,255,0.82)', marginTop: 20, marginBottom: 36, lineHeight: 1.6, maxWidth: 420 }}>
+                Data-driven insights, real-time weather, and community wisdom — everything a modern farmer needs in one platform.
+              </p>
+              <div style={{ display: 'flex', gap: 14 }}>
+                <button onClick={() => setCurrentView('register')} style={{ ...styles.primaryBtn('#fff'), color: theme.colors.leafDark, width: 'auto', padding: '14px 32px', fontSize: 16 }}>Get Started Free</button>
+                <button onClick={() => setCurrentView('soil')} style={{ padding: '14px 28px', borderRadius: 10, border: '2px solid rgba(255,255,255,0.5)', background: 'transparent', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Analyze Soil →</button>
               </div>
             </div>
-            <div className="bg-green-800 bg-opacity-30 rounded-lg p-6">
-              <h3 className="text-xl font-semibold mb-4">{t.farmerDashboard}</h3>
-              <p className="text-green-100 mb-4">{t.realTimeInsights}</p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-green-900 bg-opacity-50 rounded p-3">
-                  <div className="text-2xl font-bold">22°C</div>
-                  <div className="text-sm text-green-200">Temperature</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              {[
+                { label: 'Prediction Accuracy', value: '94%', icon: '◎', color: '#90E0B0' },
+                { label: 'Soil Parameters', value: '7+', icon: '⬡', color: '#FFD166' },
+                { label: 'Crop Diseases', value: '50+', icon: '⚕', color: '#FF6B6B' },
+                { label: 'Forecast Days', value: '7-Day', icon: '☁', color: '#74C0FC' },
+              ].map((s, i) => (
+                <div key={i} style={styles.statCard}>
+                  <div style={{ fontSize: 28, marginBottom: 6 }}>{s.icon}</div>
+                  <div style={{ fontSize: 30, fontWeight: 700, color: s.color, letterSpacing: '-1px' }}>{s.value}</div>
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', marginTop: 4 }}>{s.label}</div>
                 </div>
-                <div className="bg-green-900 bg-opacity-50 rounded p-3">
-                  <div className="text-2xl font-bold">65%</div>
-                  <div className="text-sm text-green-200">Humidity</div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Features Section */}
-      <div className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-green-500">
-              <div className="text-4xl font-bold text-green-600 mb-2">7.8</div>
-              <div className="text-sm text-gray-500 mb-2">pH Level</div>
-              <h3 className="text-xl font-semibold mb-3">{t.soilAnalysis}</h3>
-              <p className="text-gray-600 mb-4">{t.soilAnalysisDesc}</p>
-              <button 
-                onClick={() => setCurrentView('soil')}
-                className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition-colors"
-              >
-                {t.uploadSample}
-              </button>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-blue-500">
-              <div className="text-4xl font-bold text-blue-600 mb-2">85%</div>
-              <div className="text-sm text-gray-500 mb-2">Success Rate</div>
-              <h3 className="text-xl font-semibold mb-3">{t.cropAdvisory}</h3>
-              <p className="text-gray-600 mb-4">{t.cropAdvisoryDesc}</p>
-              <button 
-                onClick={getCropRecommendations}
-                disabled={loading}
-                className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Loading...' : t.getAdvice}
-              </button>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-orange-500">
-              <div className="text-4xl font-bold text-orange-600 mb-2">22°C</div>
-              <div className="text-sm text-gray-500 mb-2">Today</div>
-              <h3 className="text-xl font-semibold mb-3">{t.weather}</h3>
-              <p className="text-gray-600 mb-4">{t.weatherForecastDesc}</p>
-              <button 
-                onClick={() => setCurrentView('weather')}
-                className="w-full bg-orange-500 text-white py-2 rounded hover:bg-orange-600 transition-colors"
-              >
-                {t.viewForecast}
-              </button>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-purple-500">
-              <div className="text-4xl font-bold text-purple-600 mb-2">Coming Soon...</div>
-              <div className="text-sm text-gray-500 mb-2">Farmers</div>
-              <h3 className="text-xl font-semibold mb-3">{t.community}</h3>
-              <p className="text-gray-600 mb-4">{t.communityForumDesc}</p>
-              <button 
-                onClick={() => setCurrentView('community')}
-                className="w-full bg-purple-500 text-white py-2 rounded hover:bg-purple-600 transition-colors"
-              >
-                {t.joinCommunity}
-              </button>
-            </div>
+      {/* Feature Cards */}
+      <div style={{ ...styles.section, background: theme.colors.parchment }}>
+        <div style={styles.container}>
+          <div style={{ textAlign: 'center', marginBottom: 52 }}>
+            <h2 style={{ ...styles.h2, textAlign: 'center' }}>Everything Your Farm Needs</h2>
+            <p style={{ color: theme.colors.muted, fontSize: 17, maxWidth: 480, margin: '12px auto 0', lineHeight: 1.6 }}>Four powerful tools working in harmony to maximize your harvest</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
+            {[
+              { id: 'soil', icon: '◎', title: 'Soil Analysis', desc: 'Input your soil parameters and receive AI-powered fertilizer recommendations, pH correction guidance, and crop suitability scores.', color: theme.colors.soil, metrics: [{ label: 'Parameters Analyzed', val: '7' }, { label: 'Crop Matches', val: '20+' }] },
+              { id: 'disease', icon: '⚕', title: 'Disease Detection', desc: 'Upload a crop photo or describe symptoms. Our AI identifies fungal, bacterial, and viral infections with treatment plans.', color: theme.colors.error, metrics: [{ label: 'Diseases Covered', val: '50+' }, { label: 'Confidence Score', val: 'Live' }] },
+              { id: 'weather', icon: '☁', title: 'Weather Forecast', desc: '7-day agricultural forecasts including rainfall probability, humidity trends, and optimal sowing or harvesting windows.', color: theme.colors.sky, metrics: [{ label: 'Forecast Window', val: '7 Days' }, { label: 'Update Frequency', val: 'Hourly' }] },
+              { id: 'community', icon: '◈', title: 'Farmer Community', desc: 'Share experiences, ask questions, and learn from thousands of farmers across India. Knowledge that grows with every conversation.', color: '#7C3AED', metrics: [{ label: 'Categories', val: '9' }, { label: 'Multilingual', val: 'Yes' }] },
+            ].map(f => (
+              <div key={f.id} style={{ ...styles.card, borderTop: `4px solid ${f.color}`, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+                  <div style={{ width: 52, height: 52, borderRadius: 14, background: `${f.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>{f.icon}</div>
+                  <div>
+                    <h3 style={{ ...styles.h3, color: f.color }}>{f.title}</h3>
+                    <p style={{ color: theme.colors.muted, fontSize: 15, lineHeight: 1.6, margin: '6px 0 0' }}>{f.desc}</p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 12, paddingTop: 16, borderTop: '1px solid #F3F4F6' }}>
+                  {f.metrics.map((m, i) => (
+                    <div key={i} style={{ flex: 1, background: `${f.color}08`, borderRadius: 10, padding: '10px 14px' }}>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: f.color }}>{m.val}</div>
+                      <div style={{ fontSize: 12, color: theme.colors.muted, marginTop: 2 }}>{m.label}</div>
+                    </div>
+                  ))}
+                  <button onClick={() => setCurrentView(f.id)} style={{ padding: '10px 18px', borderRadius: 10, border: `1.5px solid ${f.color}`, background: 'transparent', color: f.color, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', alignSelf: 'stretch', whiteSpace: 'nowrap' }}>Open →</button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Stats Section */}
-      <div className="bg-green-600 text-white py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">{t.trustedByFarmers}</h2>
-          <p className="text-center text-xl mb-12">{t.joinThousands}</p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl font-bold mb-2">Coming Soon...</div>
-              <div className="text-green-200">{t.activeFarmers}</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">Coming Soon...</div>
-              <div className="text-green-200">{t.soilAnalyses}</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">94%</div>
-              <div className="text-green-200">{t.predictionAccuracy}</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">24/7</div>
-              <div className="text-green-200">{t.support247}</div>
-            </div>
+      {/* How it works */}
+      <div style={{ ...styles.section, background: '#fff' }}>
+        <div style={styles.container}>
+          <h2 style={{ ...styles.h2, textAlign: 'center', marginBottom: 48 }}>How KrishiAi Works</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
+            {[
+              { step: '01', title: 'Create Your Profile', desc: 'Register your farm — size, location, primary crops. This personalizes every recommendation.', icon: '👤' },
+              { step: '02', title: 'Input Your Data', desc: 'Enter soil readings, upload crop photos, or select your city for live weather.', icon: '📊' },
+              { step: '03', title: 'Get AI Insights', desc: 'Receive targeted recommendations for fertilizers, disease treatment, and optimal harvest timing.', icon: '✨' },
+            ].map((s, i) => (
+              <div key={i} style={{ textAlign: 'center', padding: '32px 24px' }}>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>{s.icon}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: theme.colors.leaf, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>Step {s.step}</div>
+                <h3 style={{ ...styles.h3, marginBottom: 10 }}>{s.title}</h3>
+                <p style={{ color: theme.colors.muted, lineHeight: 1.65, fontSize: 15 }}>{s.desc}</p>
+              </div>
+            ))}
           </div>
+        </div>
+      </div>
+
+      {/* FAQ */}
+      <div style={{ ...styles.section, background: theme.colors.parchment }}>
+        <div style={{ ...styles.container, maxWidth: 720 }}>
+          <h2 style={{ ...styles.h2, textAlign: 'center', marginBottom: 40 }}>Frequently Asked Questions</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {FAQ.map((f, i) => (
+              <div key={i} style={{ ...styles.card, cursor: 'pointer', padding: '20px 24px' }} onClick={() => setOpenFAQ(openFAQ === i ? null : i)}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 600, fontSize: 16 }}>{f.q}</span>
+                  <span style={{ fontSize: 20, color: theme.colors.leaf, transform: openFAQ === i ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s', marginLeft: 16 }}>+</span>
+                </div>
+                {openFAQ === i && <p style={{ color: theme.colors.muted, marginTop: 14, lineHeight: 1.65, fontSize: 15 }}>{f.a}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Banner */}
+      <div style={{ background: `linear-gradient(135deg, ${theme.colors.leafDark}, ${theme.colors.leaf})`, padding: '64px 0' }}>
+        <div style={{ ...styles.container, textAlign: 'center' }}>
+          <h2 style={{ color: '#fff', fontSize: 36, fontWeight: 700, margin: '0 0 16px', letterSpacing: '-1px' }}>Ready to Transform Your Farm?</h2>
+          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 18, marginBottom: 32 }}>Join the growing community of data-driven farmers across India.</p>
+          <button onClick={() => setCurrentView('register')} style={{ ...styles.primaryBtn('#fff'), color: theme.colors.leafDark, width: 'auto', padding: '16px 40px', fontSize: 17 }}>Create Free Profile</button>
         </div>
       </div>
     </div>
   )
 
+  const FormInput = ({ placeholder, type = 'text', value, onChange, style = {} }) => (
+    <input type={type} placeholder={placeholder} value={value} onChange={onChange} style={{ ...styles.input, ...style }} onFocus={e => e.target.style.borderColor = theme.colors.leaf} onBlur={e => e.target.style.borderColor = '#E5E7EB'} />
+  )
+
   const renderRegister = () => (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4">
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8">
-          <h2 className="text-2xl font-bold mb-6 text-center">Create Farmer Profile</h2>
-          <form onSubmit={(e) => {
-            e.preventDefault()
-            createUser(userForm)
-          }}>
-            <div className="space-y-4">
-              <input
-                type="text"
-                placeholder="Username"
-                value={userForm.username}
-                onChange={(e) => setUserForm({...userForm, username: e.target.value})}
-                className="w-full p-3 border rounded-lg"
-                required
-              />
-              <input
-                type="email"
-                placeholder="Email"
-                value={userForm.email}
-                onChange={(e) => setUserForm({...userForm, email: e.target.value})}
-                className="w-full p-3 border rounded-lg"
-                required
-              />
-              <input
-                type="text"
-                placeholder="Full Name"
-                value={userForm.full_name}
-                onChange={(e) => setUserForm({...userForm, full_name: e.target.value})}
-                className="w-full p-3 border rounded-lg"
-              />
-              <input
-                type="tel"
-                placeholder="Phone"
-                value={userForm.phone}
-                onChange={(e) => setUserForm({...userForm, phone: e.target.value})}
-                className="w-full p-3 border rounded-lg"
-              />
-              <input
-                type="text"
-                placeholder="Location"
-                value={userForm.location}
-                onChange={(e) => setUserForm({...userForm, location: e.target.value})}
-                className="w-full p-3 border rounded-lg"
-              />
-              <input
-                type="number"
-                placeholder="Farm Size (acres)"
-                value={userForm.farm_size}
-                onChange={(e) => setUserForm({...userForm, farm_size: e.target.value})}
-                className="w-full p-3 border rounded-lg"
-              />
-              <input
-                type="text"
-                placeholder="Primary Crops"
-                value={userForm.primary_crops}
-                onChange={(e) => setUserForm({...userForm, primary_crops: e.target.value})}
-                className="w-full p-3 border rounded-lg"
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Creating Profile...' : 'Create Profile'}
+    <div style={{ ...styles.section, background: theme.colors.parchment }}>
+      <div style={styles.container}>
+        <div style={{ maxWidth: 520, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 36 }}>
+            <h2 style={styles.h2}>Create Your Farmer Profile</h2>
+            <p style={{ color: theme.colors.muted, fontSize: 16 }}>Your personalized agricultural dashboard awaits</p>
+          </div>
+          <div style={styles.card}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {[
+                { ph: 'Username *', k: 'username', t: 'text' },
+                { ph: 'Email address *', k: 'email', t: 'email' },
+                { ph: 'Full Name', k: 'full_name', t: 'text' },
+                { ph: 'Phone Number', k: 'phone', t: 'tel' },
+                { ph: 'Village / District / State', k: 'location', t: 'text' },
+                { ph: 'Farm Size (acres)', k: 'farm_size', t: 'number' },
+                { ph: 'Primary Crops (e.g. Wheat, Rice)', k: 'primary_crops', t: 'text' },
+              ].map(f => (
+                <FormInput key={f.k} placeholder={f.ph} type={f.t} value={userForm[f.k]} onChange={e => setUserForm({ ...userForm, [f.k]: e.target.value })} />
+              ))}
+              <button onClick={() => createUser(userForm)} disabled={loading} style={{ ...styles.primaryBtn(), marginTop: 8, opacity: loading ? 0.6 : 1 }}>
+                {loading ? 'Creating profile...' : 'Create Profile →'}
               </button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>
   )
 
   const renderSoilAnalysis = () => (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4">
+    <div style={{ ...styles.section, background: theme.colors.parchment }}>
+      <div style={styles.container}>
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+          <div style={{ marginBottom: 36 }}>
+            <div style={{ ...styles.badge(theme.colors.soil), marginBottom: 12 }}>Soil Science</div>
+            <h2 style={styles.h2}>Soil Health Analysis</h2>
+            <p style={{ color: theme.colors.muted, fontSize: 17, lineHeight: 1.6 }}>Enter your soil test results and our AI will generate a comprehensive health report with actionable recommendations.</p>
+          </div>
 
-
-
-
-        <div className="bg-[#f4d35e]/30 border-l-4 border-[#f95738] text-gray-800 p-6 rounded-xl shadow-sm max-w-4xl mx-auto my-6">
-      <h3 className="text-xl font-semibold text-[#0d3b66] mb-2">Why Soil Analysis Matters</h3>
-      <p className="leading-relaxed">
-        Know your soil like never before. We analyze your soil’s nutrients and type to give you
-        precise crop and fertilizer recommendations — helping you reduce input cost and
-        increase yield.
-      </p>
-    </div>
-
-        <h2 className="text-3xl font-bold text-center mb-8">{t.soilAnalysis}</h2>
-        
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <h3 className="text-xl font-semibold mb-6">Soil Sample Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="Location"
-                value={soilData.location}
-                onChange={(e) => setSoilData({...soilData, location: e.target.value})}
-                className="p-3 border rounded-lg"
-              />
-              <input
-                type="number"
-                placeholder="pH Level"
-                value={soilData.ph_level}
-                onChange={(e) => setSoilData({...soilData, ph_level: parseInt(e.target.value)})}
-                className="p-3 border rounded-lg"
-              />
-              <input
-                type="number"
-                placeholder="Nitrogen (mg/kg)"
-                value={soilData.nitrogen}
-                onChange={(e) => setSoilData({...soilData, nitrogen: parseInt(e.target.value)})}
-                className="p-3 border rounded-lg"
-              />
-              <input
-                type="number"
-                placeholder="Phosphorus (mg/kg)"
-                value={soilData.phosphorus}
-                onChange={(e) => setSoilData({...soilData, phosphorus: parseInt(e.target.value)})}
-                className="p-3 border rounded-lg"
-              />
-              <input
-                type="number"
-                placeholder="Potassium (mg/kg)"
-                value={soilData.potassium}
-                onChange={(e) => setSoilData({...soilData, potassium: parseInt(e.target.value)})}
-                className="p-3 border rounded-lg"
-              />
-              <input
-                type="number"
-                placeholder="Organic Matter (%)"
-                value={soilData.organic_matter}
-                onChange={(e) => setSoilData({...soilData, organic_matter: parseInt(e.target.value)})}
-                className="p-3 border rounded-lg"
-              />
-              <input
-                type="number"
-                placeholder="Moisture Content (%)"
-                value={soilData.moisture_content}
-                onChange={(e) => setSoilData({...soilData, moisture_content: parseInt(e.target.value)})}
-                className="p-3 border rounded-lg"
-              />
+          <div style={{ ...styles.card, marginBottom: 24 }}>
+            <h3 style={{ ...styles.h3, marginBottom: 20, color: theme.colors.soil }}>Soil Parameters</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              {[
+                { ph: 'Location / District', k: 'location', t: 'text' },
+                { ph: 'pH Level (e.g. 6.5)', k: 'ph_level', t: 'number' },
+                { ph: 'Nitrogen (mg/kg)', k: 'nitrogen', t: 'number' },
+                { ph: 'Phosphorus (mg/kg)', k: 'phosphorus', t: 'number' },
+                { ph: 'Potassium (mg/kg)', k: 'potassium', t: 'number' },
+                { ph: 'Organic Matter (%)', k: 'organic_matter', t: 'number' },
+                { ph: 'Moisture Content (%)', k: 'moisture_content', t: 'number' },
+              ].map(f => (
+                <FormInput key={f.k} placeholder={f.ph} type={f.t} value={soilData[f.k]} onChange={e => setSoilData({ ...soilData, [f.k]: e.target.value })} style={f.k === 'location' ? { gridColumn: 'span 2' } : {}} />
+              ))}
             </div>
-            <button
-              onClick={analyzeSoil}
-              disabled={loading}
-              className="w-full mt-6 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Analyzing...' : 'Analyze Soil'}
+            <button onClick={analyzeSoil} disabled={loading} style={{ ...styles.primaryBtn(theme.colors.soil), marginTop: 20, opacity: loading ? 0.6 : 1 }}>
+              {loading ? 'Analyzing soil...' : 'Run Analysis →'}
             </button>
           </div>
 
+          {!soilResults && (
+            <div style={{ ...styles.card, background: `${theme.colors.soil}08`, border: `1px solid ${theme.colors.soil}20` }}>
+              <h4 style={{ color: theme.colors.soil, margin: '0 0 12px', fontSize: 15, fontWeight: 600 }}>ℹ Why Soil Analysis Matters</h4>
+              <p style={{ color: theme.colors.muted, lineHeight: 1.65, margin: 0, fontSize: 15 }}>Precise soil data enables targeted fertilization — avoiding waste, reducing costs, and improving crop quality. Our analysis compares your results to 20+ suitable crops for your soil type.</p>
+            </div>
+          )}
+
           {soilResults && (
-            <div className="mt-8 bg-white rounded-lg shadow-lg p-8">
-              <h3 className="text-xl font-semibold mb-6">Analysis Results</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between">
-                  <span>Health Score:</span>
-                  <span className="font-bold text-green-600">{soilResults.data.health_score}/100</span>
+            <div style={{ ...styles.card }}>
+              <h3 style={{ ...styles.h3, color: theme.colors.leaf, marginBottom: 24 }}>Analysis Results</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 28 }}>
+                <div style={{ background: `${theme.colors.leaf}10`, borderRadius: 12, padding: '20px 24px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: theme.colors.leaf, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Health Score</div>
+                  <div style={{ fontSize: 48, fontWeight: 700, color: theme.colors.leaf, letterSpacing: '-2px', lineHeight: 1.1 }}>{soilResults.data.health_score}<span style={{ fontSize: 20 }}>/100</span></div>
                 </div>
-                <div className="flex justify-between">
-                  <span>Soil Type:</span>
-                  <span className="font-bold">{soilResults.data.soil_type}</span>
+                <div style={{ background: `${theme.colors.soil}10`, borderRadius: 12, padding: '20px 24px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: theme.colors.soil, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Soil Type</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: theme.colors.soil, marginTop: 8 }}>{soilResults.data.soil_type}</div>
                 </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Recommendations:</h4>
-                  <ul className="space-y-2">
-                    {soilResults.recommendations.map((rec, index) => (
-                      <li key={index} className="bg-gray-50 p-3 rounded">
-                        <div className="font-medium">{rec.type}</div>
-                        <div className="text-sm text-gray-600">{rec.recommendation}</div>
-                      </li>
-                    ))}
-                  </ul>
+              </div>
+              <div style={{ marginBottom: 24 }}>
+                <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Recommendations</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {soilResults.recommendations.map((r, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 14, background: '#F9FAFB', borderRadius: 10, padding: '14px 16px' }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: theme.colors.leaf, marginTop: 6, flexShrink: 0 }} />
+                      <div><div style={{ fontWeight: 600, fontSize: 14 }}>{r.type}</div><div style={{ color: theme.colors.muted, fontSize: 14, marginTop: 3 }}>{r.recommendation}</div></div>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Suitable Crops:</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {soilResults.suitable_crops.map((crop, index) => (
-                      <div key={index} className="bg-green-50 p-3 rounded">
-                        <div className="font-medium">{crop.crop_name}</div>
-                        <div className="text-sm text-gray-600">Score: {crop.suitability_score}%</div>
-                      </div>
-                    ))}
-                  </div>
+              </div>
+              <div>
+                <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Suitable Crops</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                  {soilResults.suitable_crops.map((c, i) => (
+                    <div key={i} style={{ background: `${theme.colors.leaf}08`, border: `1px solid ${theme.colors.leaf}20`, borderRadius: 10, padding: '12px 16px' }}>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>{c.crop_name}</div>
+                      <div style={{ color: theme.colors.leaf, fontWeight: 700, fontSize: 13, marginTop: 4 }}>{c.suitability_score}% match</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -665,67 +352,56 @@ function App() {
   )
 
   const renderWeather = () => (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-8">{t.weather}</h2>
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-            <div className="flex items-center space-x-4 mb-6">
-              <input
-                type="text"
-                placeholder="Enter location"
-                value={weatherLocation}
-                onChange={(e) => setWeatherLocation(e.target.value)}
-                className="flex-1 p-3 border rounded-lg"
-              />
-              <button
-                onClick={getWeatherData}
-                disabled={loading}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Loading...' : 'Get Weather'}
+    <div style={{ ...styles.section, background: theme.colors.parchment }}>
+      <div style={styles.container}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          <div style={{ marginBottom: 36 }}>
+            <div style={{ ...styles.badge(theme.colors.sky), marginBottom: 12 }}>Weather Intelligence</div>
+            <h2 style={styles.h2}>Agricultural Weather Forecast</h2>
+            <p style={{ color: theme.colors.muted, fontSize: 17 }}>Hyperlocal weather data tailored for farming decisions.</p>
+          </div>
+          <div style={{ ...styles.card, marginBottom: 24 }}>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <FormInput placeholder="Enter city or district (e.g. Delhi, Jaipur)" value={weatherLocation} onChange={e => setWeatherLocation(e.target.value)} style={{ flex: 1 }} />
+              <button onClick={getWeatherData} disabled={loading} style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: theme.colors.sky, color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', opacity: loading ? 0.6 : 1 }}>
+                {loading ? '...' : 'Get Forecast'}
               </button>
             </div>
-
-            {weatherData && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-blue-50 p-6 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-2">Current Weather</h3>
-                  <div className="text-3xl font-bold text-blue-600">{weatherData.temperature}°C</div>
-                  <div className="text-gray-600">{weatherData.condition}</div>
-                  <div className="mt-2 space-y-1 text-sm">
-                    <div>Humidity: {weatherData.humidity}%</div>
-                    <div>Wind: {weatherData.wind_speed} km/h</div>
-                    <div>Pressure: {weatherData.pressure} hPa</div>
-                  </div>
-                </div>
-                <div className="bg-green-50 p-6 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-2">Rainfall</h3>
-                  <div className="text-3xl font-bold text-green-600">{weatherData.rainfall}mm</div>
-                  <div className="text-gray-600">Today</div>
-                </div>
-                <div className="bg-orange-50 p-6 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-2">UV Index</h3>
-                  <div className="text-3xl font-bold text-orange-600">{weatherData.uv_index}</div>
-                  <div className="text-gray-600">Current</div>
-                </div>
-              </div>
-            )}
           </div>
-
+          {weatherData && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
+              {[
+                { label: 'Temperature', value: `${weatherData.temperature}°C`, sub: weatherData.condition, color: theme.colors.sun, icon: '🌡' },
+                { label: 'Humidity', value: `${weatherData.humidity}%`, sub: `Wind ${weatherData.wind_speed} km/h`, color: theme.colors.sky, icon: '💧' },
+                { label: 'Rainfall', value: `${weatherData.rainfall}mm`, sub: `UV Index: ${weatherData.uv_index}`, color: theme.colors.leaf, icon: '🌧' },
+              ].map((s, i) => (
+                <div key={i} style={{ ...styles.card, textAlign: 'center', borderTop: `4px solid ${s.color}` }}>
+                  <div style={{ fontSize: 32, marginBottom: 10 }}>{s.icon}</div>
+                  <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: s.color, fontWeight: 700 }}>{s.label}</div>
+                  <div style={{ fontSize: 38, fontWeight: 700, color: s.color, letterSpacing: '-1.5px', margin: '8px 0 4px' }}>{s.value}</div>
+                  <div style={{ color: theme.colors.muted, fontSize: 14 }}>{s.sub}</div>
+                </div>
+              ))}
+            </div>
+          )}
           {weatherForecast && (
-            <div className="bg-white rounded-lg shadow-lg p-8">
-              <h3 className="text-xl font-semibold mb-6">7-Day Forecast</h3>
-              <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-                {weatherForecast.slice(0, 7).map((day, index) => (
-                  <div key={index} className="text-center p-4 bg-gray-50 rounded-lg">
-                    <div className="font-medium">{new Date(day.date).toLocaleDateString('en', {weekday: 'short'})}</div>
-                    <div className="text-2xl font-bold text-blue-600 my-2">{day.temperature}°C</div>
-                    <div className="text-sm text-gray-600">{day.condition}</div>
-                    <div className="text-xs text-gray-500 mt-1">{day.rainfall}mm</div>
+            <div style={styles.card}>
+              <h3 style={{ ...styles.h3, marginBottom: 20 }}>7-Day Forecast</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10 }}>
+                {weatherForecast.slice(0, 7).map((day, i) => (
+                  <div key={i} style={{ textAlign: 'center', padding: '16px 8px', background: i === 0 ? `${theme.colors.sky}10` : '#F9FAFB', borderRadius: 12, border: i === 0 ? `1px solid ${theme.colors.sky}30` : 'none' }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: theme.colors.muted, marginBottom: 8 }}>{new Date(day.date).toLocaleDateString('en', { weekday: 'short' })}</div>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: theme.colors.sky }}>{day.temperature}°</div>
+                    <div style={{ fontSize: 11, color: theme.colors.muted, marginTop: 4 }}>{day.rainfall}mm</div>
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+          {!weatherData && !loading && (
+            <div style={{ ...styles.card, background: `${theme.colors.sky}08`, border: `1px solid ${theme.colors.sky}20`, textAlign: 'center', padding: '48px 32px' }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>☁</div>
+              <p style={{ color: theme.colors.muted, margin: 0 }}>Enter your location above to load current conditions and the 7-day forecast.</p>
             </div>
           )}
         </div>
@@ -734,71 +410,55 @@ function App() {
   )
 
   const renderCommunity = () => (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-8">{t.community}</h2>
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-            <h3 className="text-xl font-semibold mb-6">Create New Post</h3>
-            <div className="space-y-4">
-              <input
-                type="text"
-                placeholder="Post Title"
-                value={newPost.title}
-                onChange={(e) => setNewPost({...newPost, title: e.target.value})}
-                className="w-full p-3 border rounded-lg"
-              />
-              <select
-                value={newPost.category}
-                onChange={(e) => setNewPost({...newPost, category: e.target.value})}
-                className="w-full p-3 border rounded-lg"
-              >
+    <div style={{ ...styles.section, background: theme.colors.parchment }}>
+      <div style={styles.container}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
+          <div style={{ marginBottom: 36 }}>
+            <div style={{ ...styles.badge('#7C3AED'), marginBottom: 12 }}>Community</div>
+            <h2 style={styles.h2}>Farmer Forum</h2>
+            <p style={{ color: theme.colors.muted, fontSize: 17 }}>Share experiences, ask questions, and learn from thousands of farmers.</p>
+          </div>
+          <div style={{ ...styles.card, marginBottom: 28 }}>
+            <h3 style={{ ...styles.h3, marginBottom: 20, color: '#7C3AED' }}>New Post</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <FormInput placeholder="Post title" value={newPost.title} onChange={e => setNewPost({ ...newPost, title: e.target.value })} />
+              <select value={newPost.category} onChange={e => setNewPost({ ...newPost, category: e.target.value })} style={{ ...styles.input }}>
                 <option value="">Select Category</option>
-                <option value="Crop Management">Crop Management</option>
-                <option value="Soil Health">Soil Health</option>
-                <option value="Pest Control">Pest Control</option>
-                <option value="Weather Discussion">Weather Discussion</option>
-                <option value="Market Prices">Market Prices</option>
-                <option value="Technology">Technology</option>
-                <option value="Success Stories">Success Stories</option>
-                <option value="Questions">Questions</option>
-                <option value="General Discussion">General Discussion</option>
+                {['Crop Management', 'Soil Health', 'Pest Control', 'Weather Discussion', 'Market Prices', 'Technology', 'Success Stories', 'Questions', 'General Discussion'].map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <textarea
-                placeholder="Post Content"
-                value={newPost.content}
-                onChange={(e) => setNewPost({...newPost, content: e.target.value})}
-                className="w-full p-3 border rounded-lg h-32"
-              />
-              <button
-                onClick={createCommunityPost}
-                disabled={loading}
-                className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Creating...' : 'Create Post'}
+              <textarea placeholder="Share your experience, question, or insight..." value={newPost.content} onChange={e => setNewPost({ ...newPost, content: e.target.value })} style={{ ...styles.input, height: 120, resize: 'vertical' }} />
+              <button onClick={createCommunityPost} disabled={loading} style={{ ...styles.primaryBtn('#7C3AED'), opacity: loading ? 0.6 : 1 }}>
+                {loading ? 'Posting...' : 'Publish Post →'}
               </button>
             </div>
           </div>
-
-          <div className="space-y-6">
-            {communityPosts.map((post, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-lg p-6">
-                <div className="flex justify-between items-start mb-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {communityPosts.length === 0 && !loading && (
+              <div style={{ ...styles.card, textAlign: 'center', padding: '48px 32px' }}>
+                <div style={{ fontSize: 40, marginBottom: 16 }}>◈</div>
+                <p style={{ color: theme.colors.muted }}>No posts yet. Be the first to share!</p>
+              </div>
+            )}
+            {communityPosts.map((post, i) => (
+              <div key={i} style={styles.card}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <div>
-                    <h3 className="text-lg font-semibold">{post.title}</h3>
-                    <div className="text-sm text-gray-500">
-                      {post.category} • {new Date(post.created_at).toLocaleDateString()}
+                    <h4 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>{post.title}</h4>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      <span style={{ ...styles.badge('#7C3AED'), fontSize: 10 }}>{post.category}</span>
+                      <span style={{ fontSize: 12, color: theme.colors.muted }}>{new Date(post.created_at).toLocaleDateString()}</span>
                     </div>
                   </div>
-                  <div className="text-sm text-gray-500">
-                    {post.likes_count} likes • {post.comments_count} comments
+                  <div style={{ fontSize: 12, color: theme.colors.muted, textAlign: 'right' }}>
+                    <div>♥ {post.likes_count}</div>
+                    <div>💬 {post.comments_count}</div>
                   </div>
                 </div>
-                <p className="text-gray-700">{post.content}</p>
-                <div className="mt-4 flex space-x-4">
-                  <button className="text-blue-600 hover:text-blue-800">Like</button>
-                  <button className="text-green-600 hover:text-green-800">Comment</button>
-                  <button className="text-gray-600 hover:text-gray-800">Share</button>
+                <p style={{ color: theme.colors.muted, lineHeight: 1.65, margin: '0 0 16px', fontSize: 15 }}>{post.content}</p>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  {['Like', 'Comment', 'Share'].map(a => (
+                    <button key={a} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #E5E7EB', background: 'transparent', color: theme.colors.muted, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>{a}</button>
+                  ))}
                 </div>
               </div>
             ))}
@@ -809,118 +469,71 @@ function App() {
   )
 
   const renderDiseaseDetection = () => (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4">
-
-        <div className="bg-gradient-to-br from-green-50 to-white border-l-4 border-green-500 rounded-xl p-6 max-w-4xl mx-auto mt-8 shadow-md">
-      <div className="flex items-center mb-3">
-        <span className="text-2xl mr-2">🦠</span>
-        <h3 className="text-xl font-bold text-green-700">Disease Detection</h3>
-      </div>
-      <p className="text-gray-700 mb-4 leading-relaxed">
-        🌾 <span className="font-semibold">Fight Crop Diseases Before They Spread</span><br />
-        Just like humans, crops can get sick — and without early care, even a small infection can destroy an entire season’s work. Most farmers notice the symptoms only when it’s too late. That’s where we come in.
-      </p>
-
-      <h4 className="text-lg font-semibold text-green-600 mb-2">🧬 Common Types of Crop Diseases:</h4>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="bg-white border border-green-200 p-4 rounded-md shadow-sm hover:shadow-md transition">
-          <h5 className="font-semibold text-green-700">🍄 Fungal Diseases</h5>
-          <p className="text-sm text-gray-600 italic">e.g., Leaf Spot, Powdery Mildew, Rust</p>
-          <p className="text-gray-700 text-sm mt-1">
-            Cause yellowing, rotting, or wilting of leaves and stems.
-          </p>
-        </div>
-        <div className="bg-white border border-green-200 p-4 rounded-md shadow-sm hover:shadow-md transition">
-          <h5 className="font-semibold text-green-700">🧫 Bacterial Diseases</h5>
-          <p className="text-sm text-gray-600 italic">e.g., Bacterial Blight, Wilt</p>
-          <p className="text-gray-700 text-sm mt-1">
-            Spread quickly in humid conditions, damaging plant tissues.
-          </p>
-        </div>
-        <div className="bg-white border border-green-200 p-4 rounded-md shadow-sm hover:shadow-md transition">
-          <h5 className="font-semibold text-green-700">🧪 Viral Diseases</h5>
-          <p className="text-sm text-gray-600 italic">e.g., Mosaic Virus, Leaf Curl</p>
-          <p className="text-gray-700 text-sm mt-1">
-            Usually untreatable, but early detection helps minimize spread.
-          </p>
-        </div>
-        <div className="bg-white border border-green-200 p-4 rounded-md shadow-sm hover:shadow-md transition">
-          <h5 className="font-semibold text-green-700">🧯 Nutrient Deficiency</h5>
-          <p className="text-sm text-gray-600 italic">Often confused with diseases</p>
-          <p className="text-gray-700 text-sm mt-1">
-            Shows as yellowing, weak stems, or patchy growth.
-          </p>
-        </div>
-      </div>
-    </div>
-
-
-        <h2 className="text-3xl font-bold text-center mb-8 mt-10">Disease Detection</h2>
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <h3 className="text-xl font-semibold mb-6">Upload Crop Image</h3>
-            <div className="space-y-4">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setDiseaseImage(e.target.files[0])}
-                  className="hidden"
-                  id="disease-image"
-                />
-                <label htmlFor="disease-image" className="cursor-pointer">
-                  <div className="text-gray-500">
-                    {diseaseImage ? diseaseImage.name : 'Click to upload crop image'}
-                  </div>
-                </label>
-              </div>
-              <button
-                onClick={detectDisease}
-                disabled={loading}
-                className="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Analyzing...' : 'Detect Disease'}
-              </button>
-            </div>
+    <div style={{ ...styles.section, background: theme.colors.parchment }}>
+      <div style={styles.container}>
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+          <div style={{ marginBottom: 36 }}>
+            <div style={{ ...styles.badge(theme.colors.error), marginBottom: 12 }}>Disease AI</div>
+            <h2 style={styles.h2}>Crop Disease Detection</h2>
+            <p style={{ color: theme.colors.muted, fontSize: 17 }}>Early detection saves your harvest. Upload an image and get an instant diagnosis.</p>
           </div>
-
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 28 }}>
+            {[
+              { icon: '🍄', title: 'Fungal', desc: 'Leaf spot, powdery mildew, rust', color: '#92400E' },
+              { icon: '🧫', title: 'Bacterial', desc: 'Blight, wilt diseases', color: '#1D4ED8' },
+              { icon: '🧪', title: 'Viral', desc: 'Mosaic, leaf curl infections', color: '#6D28D9' },
+              { icon: '⚡', title: 'Nutrient Deficiency', desc: 'Yellowing, weak growth', color: '#065F46' },
+            ].map((t, i) => (
+              <div key={i} style={{ ...styles.card, display: 'flex', gap: 14, alignItems: 'flex-start', padding: '16px 20px' }}>
+                <div style={{ fontSize: 28 }}>{t.icon}</div>
+                <div><div style={{ fontWeight: 700, fontSize: 15, color: t.color }}>{t.title}</div><div style={{ color: theme.colors.muted, fontSize: 13, marginTop: 3 }}>{t.desc}</div></div>
+              </div>
+            ))}
+          </div>
+          <div style={{ ...styles.card, marginBottom: 24 }}>
+            <h3 style={{ ...styles.h3, color: theme.colors.error, marginBottom: 20 }}>Upload Crop Image</h3>
+            <div style={{ border: `2px dashed ${theme.colors.error}40`, borderRadius: 12, padding: '40px 24px', textAlign: 'center', marginBottom: 16, cursor: 'pointer', background: `${theme.colors.error}04` }} onClick={() => document.getElementById('disease-upload').click()}>
+              <input type="file" accept="image/*" id="disease-upload" style={{ display: 'none' }} onChange={e => setDiseaseImage(e.target.files[0])} />
+              <div style={{ fontSize: 40, marginBottom: 12 }}>📷</div>
+              <div style={{ fontWeight: 600, color: theme.colors.muted }}>{diseaseImage ? `✓ ${diseaseImage.name}` : 'Click to upload a crop photo'}</div>
+              <div style={{ fontSize: 13, color: '#9CA3AF', marginTop: 6 }}>JPG, PNG up to 10MB</div>
+            </div>
+            <button onClick={detectDisease} disabled={loading} style={{ ...styles.primaryBtn(theme.colors.error), opacity: loading ? 0.6 : 1 }}>
+              {loading ? 'Analyzing image...' : 'Detect Disease →'}
+            </button>
+          </div>
           {diseaseResults && (
-            <div className="mt-8 bg-white rounded-lg shadow-lg p-8">
-              <h3 className="text-xl font-semibold mb-6">Detection Results</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between">
-                  <span>Disease:</span>
-                  <span className="font-bold text-red-600">{diseaseResults.detection_result.disease_name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Confidence:</span>
-                  <span className="font-bold">{(diseaseResults.detection_result.confidence_score * 100).toFixed(1)}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Severity:</span>
-                  <span className="font-bold">{diseaseResults.detection_result.severity_level}</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Treatment Recommendations:</h4>
-                  <ul className="space-y-2">
-                    {diseaseResults.detection_result.treatment_recommendations.map((treatment, index) => (
-                      <li key={index} className="bg-red-50 p-3 rounded">
-                        {treatment}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Preventive Measures:</h4>
-                  <ul className="space-y-2">
-                    {diseaseResults.detection_result.preventive_measures.map((measure, index) => (
-                      <li key={index} className="bg-green-50 p-3 rounded">
-                        {measure}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+            <div style={styles.card}>
+              <h3 style={{ ...styles.h3, color: theme.colors.error, marginBottom: 24 }}>Detection Results</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+                {[
+                  { label: 'Disease', value: diseaseResults.detection_result.disease_name, color: theme.colors.error },
+                  { label: 'Confidence', value: `${(diseaseResults.detection_result.confidence_score * 100).toFixed(1)}%`, color: theme.colors.sun },
+                  { label: 'Severity', value: diseaseResults.detection_result.severity_level, color: theme.colors.muted },
+                ].map((s, i) => (
+                  <div key={i} style={{ background: '#F9FAFB', borderRadius: 10, padding: '14px 16px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: s.color }}>{s.label}</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, marginTop: 6 }}>{s.value}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Treatment Plan</h4>
+                {diseaseResults.detection_result.treatment_recommendations.map((t, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 14px', background: `${theme.colors.error}06`, borderRadius: 8, marginBottom: 8 }}>
+                    <span style={{ color: theme.colors.error, fontWeight: 700, flexShrink: 0 }}>{i + 1}.</span>
+                    <span style={{ color: theme.colors.dark, fontSize: 14 }}>{t}</span>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Preventive Measures</h4>
+                {diseaseResults.detection_result.preventive_measures.map((m, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 14px', background: `${theme.colors.leaf}06`, borderRadius: 8, marginBottom: 8 }}>
+                    <span style={{ color: theme.colors.leaf, fontWeight: 700, flexShrink: 0 }}>✓</span>
+                    <span style={{ color: theme.colors.dark, fontSize: 14 }}>{m}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -930,96 +543,39 @@ function App() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={styles.page}>
       {/* Navigation */}
-      <nav className="bg-white shadow-lg sticky top-0 z-50">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center py-4 space-x-2">
-              <img src={logo} alt="KrishiAi logo" draggable='false' className="h-12 w-50" />
-            <div className="hidden md:flex space-x-6">
-              <button 
-                onClick={() => setCurrentView('home')}
-                className={`px-4 py-2 rounded-lg transition-colors ${currentView === 'home' ? 'bg-green-100 text-green-600' : 'text-gray-600 hover:text-green-600'}`}
-              >
-                {t.home}
+      <nav style={styles.nav}>
+        <div style={styles.navInner}>
+          <div style={styles.logo} onClick={() => setCurrentView('home')}>
+            <div style={styles.logoLeaf}>🌱</div>
+            <span style={styles.logoText}>KrishiAi</span>
+          </div>
+          <div style={styles.navLinks}>
+            {nav.map(n => (
+              <button key={n.id} onClick={() => setCurrentView(n.id)} style={styles.navBtn(currentView === n.id, n.accent)}>
+                {n.label}
               </button>
-              <button 
-                onClick={() => setCurrentView('soil')}
-                className={`px-4 py-2 rounded-lg transition-colors ${currentView === 'soil' ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:text-blue-600'}`}
-              >
-                {t.soilAnalysis}
-              </button>
-              <button 
-                onClick={() => setCurrentView('disease')}
-                className={`px-4 py-2 rounded-lg transition-colors ${currentView === 'disease' ? 'bg-red-100 text-red-600' : 'text-gray-600 hover:text-red-600'}`}
-              >
-                Disease Detection
-              </button>
-              <button 
-                onClick={() => setCurrentView('weather')}
-                className={`px-4 py-2 rounded-lg transition-colors ${currentView === 'weather' ? 'bg-orange-100 text-orange-600' : 'text-gray-600 hover:text-orange-600'}`}
-              >
-                {t.weather}
-              </button>
-              <button 
-                onClick={() => setCurrentView('community')}
-                className={`px-4 py-2 rounded-lg transition-colors ${currentView === 'community' ? 'bg-purple-100 text-purple-600' : 'text-gray-600 hover:text-purple-600'}`}
-              >
-                {t.community}
-              </button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button onClick={() => setLanguage('english')} style={styles.langBtn(language === 'english')}>EN</button>
+              <button onClick={() => setLanguage('hindi')} style={styles.langBtn(language === 'hindi')}>हिं</button>
             </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="flex space-x-2">
-                <button 
-                  onClick={() => setLanguage('english')}
-                  className={`px-3 py-1 rounded ${language === 'english' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600'}`}
-                >
-                  EN
-                </button>
-                <button 
-                  onClick={() => setLanguage('hindi')}
-                  className={`px-3 py-1 rounded ${language === 'hindi' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600'}`}
-                >
-                  हिं
-                </button>
+            {user ? (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span style={{ fontSize: 14, color: theme.colors.muted }}>Hello, {user.username}</span>
+                <button onClick={() => setUser(null)} style={{ ...styles.outlineBtn(theme.colors.error), padding: '6px 14px', fontSize: 13 }}>Logout</button>
               </div>
-              
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder={t.search}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-                <div className="absolute left-3 top-2.5 text-gray-400">🔍</div>
-              </div>
-
-              {user ? (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">Welcome, {user.username}</span>
-                  <button 
-                    onClick={() => setUser(null)}
-                    className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
-                  >
-                    Logout
-                  </button>
-                </div>
-              ) : (
-                <button 
-                  onClick={() => setCurrentView('register')}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  {t.login}
-                </button>
-              )}
-            </div>
+            ) : (
+              <button onClick={() => setCurrentView('register')} style={styles.signInBtn}>Sign In</button>
+            )}
           </div>
         </div>
       </nav>
 
-      {/* Main Content */}
+      {/* Views */}
       {currentView === 'home' && renderHome()}
       {currentView === 'register' && renderRegister()}
       {currentView === 'soil' && renderSoilAnalysis()}
@@ -1027,56 +583,38 @@ function App() {
       {currentView === 'community' && renderCommunity()}
       {currentView === 'disease' && renderDiseaseDetection()}
 
-      {/* FAQ Section*/}
-      < FAQSecion/>
-
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <footer style={styles.footer}>
+        <div style={styles.container}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 48, marginBottom: 48 }}>
             <div>
-              <div className="text-2xl font-bold mb-4">🌱 KrishiAi</div>
-              <p className="text-gray-300">
-                Empowering farmers with technology-driven solutions for sustainable agriculture.
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <div style={{ ...styles.logoLeaf, background: 'rgba(255,255,255,0.15)' }}>🌱</div>
+                <span style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>KrishiAi</span>
+              </div>
+              <p style={{ color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, fontSize: 15, maxWidth: 320, margin: 0 }}>
+                Empowering Indian farmers with technology-driven insights for sustainable, profitable agriculture.
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-              <div className="space-y-2">
-                <button onClick={() => setCurrentView('home')} className="block text-gray-300 hover:text-white">
-                  {t.home}
-                </button>
-                <button onClick={() => setCurrentView('soil')} className="block text-gray-300 hover:text-white">
-                  {t.services}
-                </button>
-                <button onClick={() => setCurrentView('community')} className="block text-gray-300 hover:text-white">
-                  {t.support}
-                </button>
-                <button className="block text-gray-300 hover:text-white">
-                  {t.contactUs}
-                </button>
-              </div>
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)', marginBottom: 16 }}>Platform</div>
+              {['Soil Analysis', 'Disease Detection', 'Weather Forecast', 'Community Forum'].map((l, i) => (
+                <div key={i} style={{ color: 'rgba(255,255,255,0.7)', fontSize: 15, marginBottom: 10, cursor: 'pointer' }}>{l}</div>
+              ))}
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-4">Support</h3>
-              <div className="space-y-2">
-                <button className="block text-gray-300 hover:text-white">
-                  {t.privacyPolicy}
-                </button>
-                <button className="block text-gray-300 hover:text-white">
-                  {t.termsOfService}
-                </button>
-              </div>
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)', marginBottom: 16 }}>Legal</div>
+              {['Privacy Policy', 'Terms of Service', 'Contact Us'].map((l, i) => (
+                <div key={i} style={{ color: 'rgba(255,255,255,0.7)', fontSize: 15, marginBottom: 10, cursor: 'pointer' }}>{l}</div>
+              ))}
             </div>
           </div>
-          <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-            © 2025 KrishiAi. All rights reserved.
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.12)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>© 2025 KrishiAi. All rights reserved.</span>
+            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Made with 🌱 for Indian farmers</span>
           </div>
         </div>
       </footer>
     </div>
   )
 }
-
-export default App
-
