@@ -7,9 +7,25 @@ export function AppLayout({ children, currentView, setCurrentView, language, set
     <div style={styles.page}>
       <nav style={styles.nav}>
         <div style={styles.navInner}>
-          <div style={styles.logo} onClick={() => setCurrentView('home')}>
-            <div style={styles.logoLeaf}>🌱</div>
-            <span style={styles.logoText}>KrishiAi</span>
+          <div style={styles.navTopRow}>
+            <div style={styles.logo} onClick={() => setCurrentView('home')}>
+              <div style={styles.logoLeaf}>🌱</div>
+              <span style={styles.logoText}>KrishiAi</span>
+            </div>
+            <div style={styles.navActions}>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button onClick={() => setLanguage('english')} style={styles.langBtn(language === 'english')}>EN</button>
+                <button onClick={() => setLanguage('hindi')} style={styles.langBtn(language === 'hindi')}>हिं</button>
+              </div>
+              {user ? (
+                <div style={styles.userActions}>
+                  <span style={{ fontSize: 14, color: theme.colors.muted, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.common.hello}, {user.username}</span>
+                  <button onClick={logoutUser} style={{ ...styles.outlineBtn(theme.colors.error), padding: '6px 14px', fontSize: 13, width: 'auto' }}>{t.common.logout}</button>
+                </div>
+              ) : (
+                <button onClick={() => setCurrentView('register')} style={styles.signInBtn}>{t.common.signIn}</button>
+              )}
+            </div>
           </div>
           <div style={styles.navLinks}>
             {nav.map(n => (
@@ -17,20 +33,6 @@ export function AppLayout({ children, currentView, setCurrentView, language, set
                 {n.label}
               </button>
             ))}
-          </div>
-          <div style={styles.navActions}>
-            <div style={{ display: 'flex', gap: 4 }}>
-              <button onClick={() => setLanguage('english')} style={styles.langBtn(language === 'english')}>EN</button>
-              <button onClick={() => setLanguage('hindi')} style={styles.langBtn(language === 'hindi')}>हिं</button>
-            </div>
-            {user ? (
-              <div style={styles.userActions}>
-                <span style={{ fontSize: 14, color: theme.colors.muted, textAlign: isMobile ? 'center' : 'left' }}>{t.common.hello}, {user.username}</span>
-                <button onClick={logoutUser} style={{ ...styles.outlineBtn(theme.colors.error), padding: '6px 14px', fontSize: 13, width: isMobile ? '100%' : 'auto' }}>{t.common.logout}</button>
-              </div>
-            ) : (
-              <button onClick={() => setCurrentView('register')} style={styles.signInBtn}>{t.common.signIn}</button>
-            )}
           </div>
         </div>
       </nav>
