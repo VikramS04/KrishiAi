@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api } from './services/api'
+import { defaultWeatherCity, defaultWeatherState, indiaLocations } from './data/indiaLocations'
+import { translations } from './data/translations'
 
 const theme = {
   colors: {
@@ -18,24 +20,6 @@ const theme = {
   }
 }
 
-const weatherLocations = [
-  'Delhi',
-  'Mumbai',
-  'Bengaluru',
-  'Chennai',
-  'Kolkata',
-  'Hyderabad',
-  'Pune',
-  'Ahmedabad',
-  'Jaipur',
-  'Lucknow',
-  'Bhopal',
-  'Indore',
-  'Patna',
-  'Ludhiana',
-  'Nagpur',
-]
-
 export default function App() {
   const [language, setLanguage] = useState('english')
   const [currentView, setCurrentView] = useState('home')
@@ -44,7 +28,9 @@ export default function App() {
 
   const [soilData, setSoilData] = useState({ location: '', ph_level: '', nitrogen: '', phosphorus: '', potassium: '', organic_matter: '', moisture_content: '' })
   const [soilResults, setSoilResults] = useState(null)
-  const [weatherLocation, setWeatherLocation] = useState('Delhi')
+  const [weatherState, setWeatherState] = useState(defaultWeatherState)
+  const [weatherCity, setWeatherCity] = useState(defaultWeatherCity)
+  const [weatherLocation, setWeatherLocation] = useState(defaultWeatherCity)
   const [weatherLocationMode, setWeatherLocationMode] = useState('preset')
   const [weatherData, setWeatherData] = useState(null)
   const [weatherForecast, setWeatherForecast] = useState(null)
@@ -56,27 +42,26 @@ export default function App() {
   const [diseaseResults, setDiseaseResults] = useState(null)
   const [userForm, setUserForm] = useState({ username: '', email: '', full_name: '', phone: '', location: '', farm_size: '', primary_crops: '' })
 
-  const t = {
-    english: { home: 'Home', soil: 'Soil Analysis', disease: 'Disease Detection', weather: 'Weather', community: 'Community', login: 'Sign In' },
-    hindi: { home: 'होम', soil: 'मिट्टी विश्लेषण', disease: 'रोग पहचान', weather: 'मौसम', community: 'समुदाय', login: 'लॉगिन' }
-  }[language]
+  const t = translations[language]
+  const selectedState = indiaLocations.find(item => item.state === weatherState)
+  const stateCities = selectedState?.cities || []
 
   const nav = [
-    { id: 'home', label: t.home, icon: '⌂', accent: theme.colors.leaf },
-    { id: 'soil', label: t.soil, icon: '◎', accent: theme.colors.soil },
-    { id: 'disease', label: t.disease, icon: '⚕', accent: theme.colors.error },
-    { id: 'weather', label: t.weather, icon: '☁', accent: theme.colors.sky },
-    { id: 'community', label: t.community, icon: '◈', accent: '#7C3AED' },
+    { id: 'home', label: t.nav.home, icon: '⌂', accent: theme.colors.leaf },
+    { id: 'soil', label: t.nav.soil, icon: '◎', accent: theme.colors.soil },
+    { id: 'disease', label: t.nav.disease, icon: '⚕', accent: theme.colors.error },
+    { id: 'weather', label: t.nav.weather, icon: '☁', accent: theme.colors.sky },
+    { id: 'community', label: t.nav.community, icon: '◈', accent: '#7C3AED' },
   ]
 
   const requireUserId = () => {
     if (user?._id) return user._id
-    alert('Please create your farmer profile first so results can be saved correctly.')
+    alert(t.alerts.createProfileFirst)
     setCurrentView('register')
     return null
   }
 
-  const runRequest = async (task, errorPrefix = 'Request failed') => {
+  const runRequest = async (task, errorPrefix = t.errors.request) => {
     try {
       setLoading(true)
       return await task()
@@ -90,7 +75,12 @@ export default function App() {
 
   const formatPostDate = (post) => {
     const rawDate = post.createdAt || post.created_at
-    return rawDate ? new Date(rawDate).toLocaleDateString() : 'Recently'
+    return rawDate ? new Date(rawDate).toLocaleDateString(language === 'hindi' ? 'hi-IN' : 'en-IN') : t.common.recently
+  }
+
+  const formatCategory = (category) => {
+    const index = translations.english.community.categories.indexOf(category)
+    return index >= 0 ? t.community.categories[index] : category
   }
 
   const analyzeSoil = async () => {
@@ -99,7 +89,7 @@ export default function App() {
 
     const result = await runRequest(
       () => api.analyzeSoil({ user_id: userId, ...soilData }),
-      'Soil analysis failed'
+      t.errors.soil
     )
     if (result) setSoilResults(result)
   }
@@ -107,7 +97,7 @@ export default function App() {
   const getWeatherData = async () => {
     const location = weatherLocation.trim()
     if (!location) {
-      alert('Please select or enter a location first.')
+      alert(t.alerts.selectLocation)
       return
     }
 
@@ -117,7 +107,7 @@ export default function App() {
         api.getWeatherForecast(location, 7),
       ])
       return { current, forecast }
-    }, 'Weather error')
+    }, t.errors.weather)
 
     if (result) {
       setWeatherData(result.current.data)
@@ -127,7 +117,7 @@ export default function App() {
 
   const getDeviceWeatherData = async () => {
     if (!navigator.geolocation) {
-      alert('Location access is not supported in this browser. Please choose a city from the list.')
+      alert(t.alerts.geolocationUnsupported)
       return
     }
 
@@ -149,15 +139,15 @@ export default function App() {
           setWeatherLocation(`${current.data.location}, ${current.data.country}`)
           setWeatherLocationMode('custom')
         } catch (e) {
-          alert(`Location weather error: ${e.message}`)
+          alert(`${t.errors.locationWeather}: ${e.message}`)
         } finally {
           setLoading(false)
         }
       },
       (error) => {
         const message = error.code === error.PERMISSION_DENIED
-          ? 'Location permission was denied. Please choose a city from the list.'
-          : 'Could not detect your location. Please choose a city from the list.'
+          ? t.alerts.geolocationDenied
+          : t.alerts.geolocationFailed
         alert(message)
         setLoading(false)
       },
@@ -166,7 +156,7 @@ export default function App() {
   }
 
   const loadCommunityPosts = async () => {
-    const result = await runRequest(() => api.getCommunityPosts(language), 'Community load failed')
+    const result = await runRequest(() => api.getCommunityPosts(language), t.errors.community)
     if (result) setCommunityPosts(result.data)
   }
 
@@ -176,7 +166,7 @@ export default function App() {
 
     const result = await runRequest(
       () => api.createCommunityPost({ user_id: userId, ...newPost, language }),
-      'Post creation failed'
+      t.errors.post
     )
 
     if (result) {
@@ -191,7 +181,7 @@ export default function App() {
 
     const cropType = diseaseCrop.trim()
     if (!cropType) {
-      alert('Please enter a crop name before running disease detection.')
+      alert(t.alerts.cropRequired)
       return
     }
 
@@ -206,7 +196,7 @@ export default function App() {
       }
 
       return api.detectDisease({ user_id: userId, crop_type: cropType, symptoms: diseaseSymptoms })
-    }, 'Detection failed')
+    }, t.errors.detection)
 
     if (result) setDiseaseResults(result)
   }
@@ -214,7 +204,7 @@ export default function App() {
   const createUser = async (userData) => {
     const result = await runRequest(
       () => api.createUser({ ...userData, language_preference: language }),
-      'Registration failed'
+      t.errors.registration
     )
 
     if (result) {
@@ -253,13 +243,6 @@ export default function App() {
     footer: { background: theme.colors.leafDark, color: '#fff', padding: '60px 0 32px' },
   }
 
-  const FAQ = [
-    { q: 'How accurate is the soil analysis?', a: 'Our AI-powered analysis has a 94% accuracy rate, cross-referenced with regional soil databases and expert agronomist knowledge.' },
-    { q: 'Which crops does disease detection support?', a: 'Currently we support 50+ crops including wheat, rice, tomato, potato, and maize. We expand our database monthly.' },
-    { q: 'Is the weather forecast farming-specific?', a: 'Yes — beyond standard weather, we provide agricultural indices like evapotranspiration, soil moisture forecasts, and sowing window recommendations.' },
-    { q: 'How do I get started?', a: 'Create your farmer profile, enter your location and farm details, and immediately access all tools. No subscription required for basic features.' },
-  ]
-
   const [openFAQ, setOpenFAQ] = useState(null)
 
   const renderHome = () => (
@@ -271,22 +254,22 @@ export default function App() {
         <div style={styles.container}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
             <div>
-              <div style={{ ...styles.badge('#90E0B0'), marginBottom: 20, fontSize: 12 }}>🌱 AI-Powered Agriculture</div>
-              <h1 style={styles.h1}>Smart Farming<br />Starts Here</h1>
+              <div style={{ ...styles.badge('#90E0B0'), marginBottom: 20, fontSize: 12 }}>🌱 {t.home.badge}</div>
+              <h1 style={styles.h1}>{t.home.titleTop}<br />{t.home.titleBottom}</h1>
               <p style={{ fontSize: 19, color: 'rgba(255,255,255,0.82)', marginTop: 20, marginBottom: 36, lineHeight: 1.6, maxWidth: 420 }}>
-                Data-driven insights, real-time weather, and community wisdom — everything a modern farmer needs in one platform.
+                {t.home.subtitle}
               </p>
               <div style={{ display: 'flex', gap: 14 }}>
-                <button onClick={() => setCurrentView('register')} style={{ ...styles.primaryBtn('#fff'), color: theme.colors.leafDark, width: 'auto', padding: '14px 32px', fontSize: 16 }}>Get Started Free</button>
-                <button onClick={() => setCurrentView('soil')} style={{ padding: '14px 28px', borderRadius: 10, border: '2px solid rgba(255,255,255,0.5)', background: 'transparent', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Analyze Soil →</button>
+                <button onClick={() => setCurrentView('register')} style={{ ...styles.primaryBtn('#fff'), color: theme.colors.leafDark, width: 'auto', padding: '14px 32px', fontSize: 16 }}>{t.home.getStarted}</button>
+                <button onClick={() => setCurrentView('soil')} style={{ padding: '14px 28px', borderRadius: 10, border: '2px solid rgba(255,255,255,0.5)', background: 'transparent', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{t.home.analyzeSoil} →</button>
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               {[
-                { label: 'Prediction Accuracy', value: '94%', icon: '◎', color: '#90E0B0' },
-                { label: 'Soil Parameters', value: '7+', icon: '⬡', color: '#FFD166' },
-                { label: 'Crop Diseases', value: '50+', icon: '⚕', color: '#FF6B6B' },
-                { label: 'Forecast Days', value: '7-Day', icon: '☁', color: '#74C0FC' },
+                { label: t.home.stats[0], value: '94%', icon: '◎', color: '#90E0B0' },
+                { label: t.home.stats[1], value: '7+', icon: '⬡', color: '#FFD166' },
+                { label: t.home.stats[2], value: '50+', icon: '⚕', color: '#FF6B6B' },
+                { label: t.home.stats[3], value: '7-Day', icon: '☁', color: '#74C0FC' },
               ].map((s, i) => (
                 <div key={i} style={styles.statCard}>
                   <div style={{ fontSize: 28, marginBottom: 6 }}>{s.icon}</div>
@@ -303,15 +286,15 @@ export default function App() {
       <div style={{ ...styles.section, background: theme.colors.parchment }}>
         <div style={styles.container}>
           <div style={{ textAlign: 'center', marginBottom: 52 }}>
-            <h2 style={{ ...styles.h2, textAlign: 'center' }}>Everything Your Farm Needs</h2>
-            <p style={{ color: theme.colors.muted, fontSize: 17, maxWidth: 480, margin: '12px auto 0', lineHeight: 1.6 }}>Four powerful tools working in harmony to maximize your harvest</p>
+            <h2 style={{ ...styles.h2, textAlign: 'center' }}>{t.home.farmNeeds}</h2>
+            <p style={{ color: theme.colors.muted, fontSize: 17, maxWidth: 480, margin: '12px auto 0', lineHeight: 1.6 }}>{t.home.farmNeedsSubtitle}</p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
             {[
-              { id: 'soil', icon: '◎', title: 'Soil Analysis', desc: 'Input your soil parameters and receive AI-powered fertilizer recommendations, pH correction guidance, and crop suitability scores.', color: theme.colors.soil, metrics: [{ label: 'Parameters Analyzed', val: '7' }, { label: 'Crop Matches', val: '20+' }] },
-              { id: 'disease', icon: '⚕', title: 'Disease Detection', desc: 'Upload a crop photo or describe symptoms. Our AI identifies fungal, bacterial, and viral infections with treatment plans.', color: theme.colors.error, metrics: [{ label: 'Diseases Covered', val: '50+' }, { label: 'Confidence Score', val: 'Live' }] },
-              { id: 'weather', icon: '☁', title: 'Weather Forecast', desc: '7-day agricultural forecasts including rainfall probability, humidity trends, and optimal sowing or harvesting windows.', color: theme.colors.sky, metrics: [{ label: 'Forecast Window', val: '7 Days' }, { label: 'Update Frequency', val: 'Hourly' }] },
-              { id: 'community', icon: '◈', title: 'Farmer Community', desc: 'Share experiences, ask questions, and learn from thousands of farmers across India. Knowledge that grows with every conversation.', color: '#7C3AED', metrics: [{ label: 'Categories', val: '9' }, { label: 'Multilingual', val: 'Yes' }] },
+              { id: 'soil', icon: '◎', title: t.home.features.soil[0], desc: t.home.features.soil[1], color: theme.colors.soil, metrics: [{ label: t.home.features.soil[2], val: '7' }, { label: t.home.features.soil[3], val: '20+' }] },
+              { id: 'disease', icon: '⚕', title: t.home.features.disease[0], desc: t.home.features.disease[1], color: theme.colors.error, metrics: [{ label: t.home.features.disease[2], val: '50+' }, { label: t.home.features.disease[3], val: 'Live' }] },
+              { id: 'weather', icon: '☁', title: t.home.features.weather[0], desc: t.home.features.weather[1], color: theme.colors.sky, metrics: [{ label: t.home.features.weather[2], val: '7 Days' }, { label: t.home.features.weather[3], val: 'Hourly' }] },
+              { id: 'community', icon: '◈', title: t.home.features.community[0], desc: t.home.features.community[1], color: '#7C3AED', metrics: [{ label: t.home.features.community[2], val: '9' }, { label: t.home.features.community[3], val: 'Yes' }] },
             ].map(f => (
               <div key={f.id} style={{ ...styles.card, borderTop: `4px solid ${f.color}`, display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
@@ -328,7 +311,7 @@ export default function App() {
                       <div style={{ fontSize: 12, color: theme.colors.muted, marginTop: 2 }}>{m.label}</div>
                     </div>
                   ))}
-                  <button onClick={() => setCurrentView(f.id)} style={{ padding: '10px 18px', borderRadius: 10, border: `1.5px solid ${f.color}`, background: 'transparent', color: f.color, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', alignSelf: 'stretch', whiteSpace: 'nowrap' }}>Open →</button>
+                  <button onClick={() => setCurrentView(f.id)} style={{ padding: '10px 18px', borderRadius: 10, border: `1.5px solid ${f.color}`, background: 'transparent', color: f.color, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', alignSelf: 'stretch', whiteSpace: 'nowrap' }}>{t.common.open} →</button>
                 </div>
               </div>
             ))}
@@ -339,16 +322,16 @@ export default function App() {
       {/* How it works */}
       <div style={{ ...styles.section, background: '#fff' }}>
         <div style={styles.container}>
-          <h2 style={{ ...styles.h2, textAlign: 'center', marginBottom: 48 }}>How KrishiAi Works</h2>
+          <h2 style={{ ...styles.h2, textAlign: 'center', marginBottom: 48 }}>{t.home.howItWorks}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
             {[
-              { step: '01', title: 'Create Your Profile', desc: 'Register your farm — size, location, primary crops. This personalizes every recommendation.', icon: '👤' },
-              { step: '02', title: 'Input Your Data', desc: 'Enter soil readings, upload crop photos, or select your city for live weather.', icon: '📊' },
-              { step: '03', title: 'Get AI Insights', desc: 'Receive targeted recommendations for fertilizers, disease treatment, and optimal harvest timing.', icon: '✨' },
+              { step: '01', title: t.home.steps[0][0], desc: t.home.steps[0][1], icon: '👤' },
+              { step: '02', title: t.home.steps[1][0], desc: t.home.steps[1][1], icon: '📊' },
+              { step: '03', title: t.home.steps[2][0], desc: t.home.steps[2][1], icon: '✨' },
             ].map((s, i) => (
               <div key={i} style={{ textAlign: 'center', padding: '32px 24px' }}>
                 <div style={{ fontSize: 48, marginBottom: 16 }}>{s.icon}</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: theme.colors.leaf, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>Step {s.step}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: theme.colors.leaf, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>{t.common.step} {s.step}</div>
                 <h3 style={{ ...styles.h3, marginBottom: 10 }}>{s.title}</h3>
                 <p style={{ color: theme.colors.muted, lineHeight: 1.65, fontSize: 15 }}>{s.desc}</p>
               </div>
@@ -360,15 +343,15 @@ export default function App() {
       {/* FAQ */}
       <div style={{ ...styles.section, background: theme.colors.parchment }}>
         <div style={{ ...styles.container, maxWidth: 720 }}>
-          <h2 style={{ ...styles.h2, textAlign: 'center', marginBottom: 40 }}>Frequently Asked Questions</h2>
+          <h2 style={{ ...styles.h2, textAlign: 'center', marginBottom: 40 }}>{t.home.faqTitle}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {FAQ.map((f, i) => (
+            {t.home.faq.map((f, i) => (
               <div key={i} style={{ ...styles.card, cursor: 'pointer', padding: '20px 24px' }} onClick={() => setOpenFAQ(openFAQ === i ? null : i)}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 600, fontSize: 16 }}>{f.q}</span>
+                  <span style={{ fontWeight: 600, fontSize: 16 }}>{f[0]}</span>
                   <span style={{ fontSize: 20, color: theme.colors.leaf, transform: openFAQ === i ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s', marginLeft: 16 }}>+</span>
                 </div>
-                {openFAQ === i && <p style={{ color: theme.colors.muted, marginTop: 14, lineHeight: 1.65, fontSize: 15 }}>{f.a}</p>}
+                {openFAQ === i && <p style={{ color: theme.colors.muted, marginTop: 14, lineHeight: 1.65, fontSize: 15 }}>{f[1]}</p>}
               </div>
             ))}
           </div>
@@ -378,9 +361,9 @@ export default function App() {
       {/* CTA Banner */}
       <div style={{ background: `linear-gradient(135deg, ${theme.colors.leafDark}, ${theme.colors.leaf})`, padding: '64px 0' }}>
         <div style={{ ...styles.container, textAlign: 'center' }}>
-          <h2 style={{ color: '#fff', fontSize: 36, fontWeight: 700, margin: '0 0 16px', letterSpacing: '-1px' }}>Ready to Transform Your Farm?</h2>
-          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 18, marginBottom: 32 }}>Join the growing community of data-driven farmers across India.</p>
-          <button onClick={() => setCurrentView('register')} style={{ ...styles.primaryBtn('#fff'), color: theme.colors.leafDark, width: 'auto', padding: '16px 40px', fontSize: 17 }}>Create Free Profile</button>
+          <h2 style={{ color: '#fff', fontSize: 36, fontWeight: 700, margin: '0 0 16px', letterSpacing: '-1px' }}>{t.home.ctaTitle}</h2>
+          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 18, marginBottom: 32 }}>{t.home.ctaSubtitle}</p>
+          <button onClick={() => setCurrentView('register')} style={{ ...styles.primaryBtn('#fff'), color: theme.colors.leafDark, width: 'auto', padding: '16px 40px', fontSize: 17 }}>{t.home.createFreeProfile}</button>
         </div>
       </div>
     </div>
@@ -395,24 +378,24 @@ export default function App() {
       <div style={styles.container}>
         <div style={{ maxWidth: 520, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 36 }}>
-            <h2 style={styles.h2}>Create Your Farmer Profile</h2>
-            <p style={{ color: theme.colors.muted, fontSize: 16 }}>Your personalized agricultural dashboard awaits</p>
+            <h2 style={styles.h2}>{t.register.title}</h2>
+            <p style={{ color: theme.colors.muted, fontSize: 16 }}>{t.register.subtitle}</p>
           </div>
           <div style={styles.card}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {[
-                { ph: 'Username *', k: 'username', t: 'text' },
-                { ph: 'Email address *', k: 'email', t: 'email' },
-                { ph: 'Full Name', k: 'full_name', t: 'text' },
-                { ph: 'Phone Number', k: 'phone', t: 'tel' },
-                { ph: 'Village / District / State', k: 'location', t: 'text' },
-                { ph: 'Farm Size (acres)', k: 'farm_size', t: 'number' },
-                { ph: 'Primary Crops (e.g. Wheat, Rice)', k: 'primary_crops', t: 'text' },
+                { ph: t.register.fields[0], k: 'username', t: 'text' },
+                { ph: t.register.fields[1], k: 'email', t: 'email' },
+                { ph: t.register.fields[2], k: 'full_name', t: 'text' },
+                { ph: t.register.fields[3], k: 'phone', t: 'tel' },
+                { ph: t.register.fields[4], k: 'location', t: 'text' },
+                { ph: t.register.fields[5], k: 'farm_size', t: 'number' },
+                { ph: t.register.fields[6], k: 'primary_crops', t: 'text' },
               ].map(f => (
                 <FormInput key={f.k} placeholder={f.ph} type={f.t} value={userForm[f.k]} onChange={e => setUserForm({ ...userForm, [f.k]: e.target.value })} />
               ))}
               <button onClick={() => createUser(userForm)} disabled={loading} style={{ ...styles.primaryBtn(), marginTop: 8, opacity: loading ? 0.6 : 1 }}>
-                {loading ? 'Creating profile...' : 'Create Profile →'}
+                {loading ? t.register.creating : `${t.register.create} →`}
               </button>
             </div>
           </div>
@@ -426,53 +409,53 @@ export default function App() {
       <div style={styles.container}>
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
           <div style={{ marginBottom: 36 }}>
-            <div style={{ ...styles.badge(theme.colors.soil), marginBottom: 12 }}>Soil Science</div>
-            <h2 style={styles.h2}>Soil Health Analysis</h2>
-            <p style={{ color: theme.colors.muted, fontSize: 17, lineHeight: 1.6 }}>Enter your soil test results and our AI will generate a comprehensive health report with actionable recommendations.</p>
+            <div style={{ ...styles.badge(theme.colors.soil), marginBottom: 12 }}>{t.soil.badge}</div>
+            <h2 style={styles.h2}>{t.soil.title}</h2>
+            <p style={{ color: theme.colors.muted, fontSize: 17, lineHeight: 1.6 }}>{t.soil.subtitle}</p>
           </div>
 
           <div style={{ ...styles.card, marginBottom: 24 }}>
-            <h3 style={{ ...styles.h3, marginBottom: 20, color: theme.colors.soil }}>Soil Parameters</h3>
+            <h3 style={{ ...styles.h3, marginBottom: 20, color: theme.colors.soil }}>{t.soil.parameters}</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               {[
-                { ph: 'Location / District', k: 'location', t: 'text' },
-                { ph: 'pH Level (e.g. 6.5)', k: 'ph_level', t: 'number' },
-                { ph: 'Nitrogen (mg/kg)', k: 'nitrogen', t: 'number' },
-                { ph: 'Phosphorus (mg/kg)', k: 'phosphorus', t: 'number' },
-                { ph: 'Potassium (mg/kg)', k: 'potassium', t: 'number' },
-                { ph: 'Organic Matter (%)', k: 'organic_matter', t: 'number' },
-                { ph: 'Moisture Content (%)', k: 'moisture_content', t: 'number' },
+                { ph: t.soil.fields[0], k: 'location', t: 'text' },
+                { ph: t.soil.fields[1], k: 'ph_level', t: 'number' },
+                { ph: t.soil.fields[2], k: 'nitrogen', t: 'number' },
+                { ph: t.soil.fields[3], k: 'phosphorus', t: 'number' },
+                { ph: t.soil.fields[4], k: 'potassium', t: 'number' },
+                { ph: t.soil.fields[5], k: 'organic_matter', t: 'number' },
+                { ph: t.soil.fields[6], k: 'moisture_content', t: 'number' },
               ].map(f => (
                 <FormInput key={f.k} placeholder={f.ph} type={f.t} value={soilData[f.k]} onChange={e => setSoilData({ ...soilData, [f.k]: e.target.value })} style={f.k === 'location' ? { gridColumn: 'span 2' } : {}} />
               ))}
             </div>
             <button onClick={analyzeSoil} disabled={loading} style={{ ...styles.primaryBtn(theme.colors.soil), marginTop: 20, opacity: loading ? 0.6 : 1 }}>
-              {loading ? 'Analyzing soil...' : 'Run Analysis →'}
+              {loading ? t.soil.analyzing : `${t.soil.run} →`}
             </button>
           </div>
 
           {!soilResults && (
             <div style={{ ...styles.card, background: `${theme.colors.soil}08`, border: `1px solid ${theme.colors.soil}20` }}>
-              <h4 style={{ color: theme.colors.soil, margin: '0 0 12px', fontSize: 15, fontWeight: 600 }}>ℹ Why Soil Analysis Matters</h4>
-              <p style={{ color: theme.colors.muted, lineHeight: 1.65, margin: 0, fontSize: 15 }}>Precise soil data enables targeted fertilization — avoiding waste, reducing costs, and improving crop quality. Our analysis compares your results to 20+ suitable crops for your soil type.</p>
+              <h4 style={{ color: theme.colors.soil, margin: '0 0 12px', fontSize: 15, fontWeight: 600 }}>ℹ {t.soil.whyTitle}</h4>
+              <p style={{ color: theme.colors.muted, lineHeight: 1.65, margin: 0, fontSize: 15 }}>{t.soil.whyBody}</p>
             </div>
           )}
 
           {soilResults && (
             <div style={{ ...styles.card }}>
-              <h3 style={{ ...styles.h3, color: theme.colors.leaf, marginBottom: 24 }}>Analysis Results</h3>
+              <h3 style={{ ...styles.h3, color: theme.colors.leaf, marginBottom: 24 }}>{t.soil.results}</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 28 }}>
                 <div style={{ background: `${theme.colors.leaf}10`, borderRadius: 12, padding: '20px 24px' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: theme.colors.leaf, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Health Score</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: theme.colors.leaf, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{t.soil.healthScore}</div>
                   <div style={{ fontSize: 48, fontWeight: 700, color: theme.colors.leaf, letterSpacing: '-2px', lineHeight: 1.1 }}>{soilResults.data.health_score}<span style={{ fontSize: 20 }}>/100</span></div>
                 </div>
                 <div style={{ background: `${theme.colors.soil}10`, borderRadius: 12, padding: '20px 24px' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: theme.colors.soil, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Soil Type</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: theme.colors.soil, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{t.soil.soilType}</div>
                   <div style={{ fontSize: 28, fontWeight: 700, color: theme.colors.soil, marginTop: 8 }}>{soilResults.data.soil_type}</div>
                 </div>
               </div>
               <div style={{ marginBottom: 24 }}>
-                <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Recommendations</h4>
+                <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{t.soil.recommendations}</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {soilResults.recommendations.map((r, i) => (
                     <div key={i} style={{ display: 'flex', gap: 14, background: '#F9FAFB', borderRadius: 10, padding: '14px 16px' }}>
@@ -483,12 +466,12 @@ export default function App() {
                 </div>
               </div>
               <div>
-                <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Suitable Crops</h4>
+                <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{t.soil.suitableCrops}</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                   {soilResults.suitable_crops.map((c, i) => (
                     <div key={i} style={{ background: `${theme.colors.leaf}08`, border: `1px solid ${theme.colors.leaf}20`, borderRadius: 10, padding: '12px 16px' }}>
                       <div style={{ fontWeight: 600, fontSize: 14 }}>{c.crop_name}</div>
-                      <div style={{ color: theme.colors.leaf, fontWeight: 700, fontSize: 13, marginTop: 4 }}>{c.suitability_score}% match</div>
+                      <div style={{ color: theme.colors.leaf, fontWeight: 700, fontSize: 13, marginTop: 4 }}>{c.suitability_score}% {t.soil.match}</div>
                     </div>
                   ))}
                 </div>
@@ -505,49 +488,69 @@ export default function App() {
       <div style={styles.container}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <div style={{ marginBottom: 36 }}>
-            <div style={{ ...styles.badge(theme.colors.sky), marginBottom: 12 }}>Weather Intelligence</div>
-            <h2 style={styles.h2}>Agricultural Weather Forecast</h2>
-            <p style={{ color: theme.colors.muted, fontSize: 17 }}>Hyperlocal weather data tailored for farming decisions.</p>
+            <div style={{ ...styles.badge(theme.colors.sky), marginBottom: 12 }}>{t.weather.badge}</div>
+            <h2 style={styles.h2}>{t.weather.title}</h2>
+            <p style={{ color: theme.colors.muted, fontSize: 17 }}>{t.weather.subtitle}</p>
           </div>
           <div style={{ ...styles.card, marginBottom: 24 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, alignItems: 'center' }}>
               <select
-                value={weatherLocationMode === 'preset' ? weatherLocation : ''}
+                value={weatherState}
                 onChange={e => {
+                  const nextState = e.target.value
+                  const nextCities = indiaLocations.find(item => item.state === nextState)?.cities || []
+                  const nextCity = nextCities[0] || ''
+                  setWeatherState(nextState)
+                  setWeatherCity(nextCity)
+                  setWeatherLocationMode('preset')
+                  setWeatherLocation(nextCity)
+                }}
+                style={{ ...styles.input }}
+              >
+                <option value="">{t.common.selectState}</option>
+                {indiaLocations.map(location => <option key={location.state} value={location.state}>{location.state}</option>)}
+              </select>
+              <select
+                value={weatherLocationMode === 'preset' ? weatherCity : ''}
+                onChange={e => {
+                  setWeatherCity(e.target.value)
                   setWeatherLocationMode('preset')
                   setWeatherLocation(e.target.value)
                 }}
                 style={{ ...styles.input }}
+                disabled={!weatherState}
               >
-                <option value="">Select a city</option>
-                {weatherLocations.map(location => <option key={location} value={location}>{location}</option>)}
+                <option value="">{t.common.selectCity}</option>
+                {stateCities.map(city => <option key={city} value={city}>{city}</option>)}
               </select>
+              <button onClick={getWeatherData} disabled={loading} style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: theme.colors.sky, color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', opacity: loading ? 0.6 : 1 }}>
+                {loading ? t.weather.loading : t.weather.getForecast}
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'center', marginTop: 12 }}>
               <FormInput
-                placeholder="Or enter village / district"
+                placeholder={t.common.customLocation}
                 value={weatherLocationMode === 'custom' ? weatherLocation : ''}
                 onChange={e => {
                   setWeatherLocationMode('custom')
                   setWeatherLocation(e.target.value)
                 }}
               />
-              <button onClick={getWeatherData} disabled={loading} style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: theme.colors.sky, color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', opacity: loading ? 0.6 : 1 }}>
-                {loading ? '...' : 'Get Forecast'}
+              <button
+                onClick={getDeviceWeatherData}
+                disabled={loading}
+                style={{ ...styles.outlineBtn(theme.colors.sky), whiteSpace: 'nowrap', opacity: loading ? 0.6 : 1 }}
+              >
+                {t.weather.currentLocation}
               </button>
             </div>
-            <button
-              onClick={getDeviceWeatherData}
-              disabled={loading}
-              style={{ ...styles.outlineBtn(theme.colors.sky), marginTop: 12, width: '100%', opacity: loading ? 0.6 : 1 }}
-            >
-              Use My Current Location
-            </button>
           </div>
           {weatherData && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
               {[
-                { label: 'Temperature', value: `${weatherData.temperature}°C`, sub: weatherData.condition, color: theme.colors.sun, icon: '🌡' },
-                { label: 'Humidity', value: `${weatherData.humidity}%`, sub: `Wind ${weatherData.wind_speed} km/h`, color: theme.colors.sky, icon: '💧' },
-                { label: 'Rainfall', value: `${weatherData.rainfall}mm`, sub: `UV Index: ${weatherData.uv_index}`, color: theme.colors.leaf, icon: '🌧' },
+                { label: t.weather.temperature, value: `${weatherData.temperature}°C`, sub: weatherData.condition, color: theme.colors.sun, icon: '🌡' },
+                { label: t.weather.humidity, value: `${weatherData.humidity}%`, sub: `${t.weather.wind} ${weatherData.wind_speed} km/h`, color: theme.colors.sky, icon: '💧' },
+                { label: t.weather.rainfall, value: `${weatherData.rainfall}mm`, sub: `${t.weather.uvIndex}: ${weatherData.uv_index || '-'}`, color: theme.colors.leaf, icon: '🌧' },
               ].map((s, i) => (
                 <div key={i} style={{ ...styles.card, textAlign: 'center', borderTop: `4px solid ${s.color}` }}>
                   <div style={{ fontSize: 32, marginBottom: 10 }}>{s.icon}</div>
@@ -560,11 +563,11 @@ export default function App() {
           )}
           {weatherForecast && (
             <div style={styles.card}>
-              <h3 style={{ ...styles.h3, marginBottom: 20 }}>7-Day Forecast</h3>
+              <h3 style={{ ...styles.h3, marginBottom: 20 }}>{t.weather.forecast}</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10 }}>
                 {weatherForecast.slice(0, 7).map((day, i) => (
                   <div key={i} style={{ textAlign: 'center', padding: '16px 8px', background: i === 0 ? `${theme.colors.sky}10` : '#F9FAFB', borderRadius: 12, border: i === 0 ? `1px solid ${theme.colors.sky}30` : 'none' }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: theme.colors.muted, marginBottom: 8 }}>{new Date(day.date).toLocaleDateString('en', { weekday: 'short' })}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: theme.colors.muted, marginBottom: 8 }}>{new Date(day.date).toLocaleDateString(language === 'hindi' ? 'hi-IN' : 'en-IN', { weekday: 'short' })}</div>
                     <div style={{ fontSize: 22, fontWeight: 700, color: theme.colors.sky }}>{day.temperature}°</div>
                     <div style={{ fontSize: 11, color: theme.colors.muted, marginTop: 4 }}>{day.rainfall}mm</div>
                   </div>
@@ -575,7 +578,7 @@ export default function App() {
           {!weatherData && !loading && (
             <div style={{ ...styles.card, background: `${theme.colors.sky}08`, border: `1px solid ${theme.colors.sky}20`, textAlign: 'center', padding: '48px 32px' }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>☁</div>
-              <p style={{ color: theme.colors.muted, margin: 0 }}>Enter your location above to load current conditions and the 7-day forecast.</p>
+              <p style={{ color: theme.colors.muted, margin: 0 }}>{t.weather.empty}</p>
             </div>
           )}
         </div>
@@ -588,21 +591,23 @@ export default function App() {
       <div style={styles.container}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
           <div style={{ marginBottom: 36 }}>
-            <div style={{ ...styles.badge('#7C3AED'), marginBottom: 12 }}>Community</div>
-            <h2 style={styles.h2}>Farmer Forum</h2>
-            <p style={{ color: theme.colors.muted, fontSize: 17 }}>Share experiences, ask questions, and learn from thousands of farmers.</p>
+            <div style={{ ...styles.badge('#7C3AED'), marginBottom: 12 }}>{t.community.badge}</div>
+            <h2 style={styles.h2}>{t.community.title}</h2>
+            <p style={{ color: theme.colors.muted, fontSize: 17 }}>{t.community.subtitle}</p>
           </div>
           <div style={{ ...styles.card, marginBottom: 28 }}>
-            <h3 style={{ ...styles.h3, marginBottom: 20, color: '#7C3AED' }}>New Post</h3>
+            <h3 style={{ ...styles.h3, marginBottom: 20, color: '#7C3AED' }}>{t.community.newPost}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <FormInput placeholder="Post title" value={newPost.title} onChange={e => setNewPost({ ...newPost, title: e.target.value })} />
+              <FormInput placeholder={t.community.postTitle} value={newPost.title} onChange={e => setNewPost({ ...newPost, title: e.target.value })} />
               <select value={newPost.category} onChange={e => setNewPost({ ...newPost, category: e.target.value })} style={{ ...styles.input }}>
-                <option value="">Select Category</option>
-                {['Crop Management', 'Soil Health', 'Pest Control', 'Weather Discussion', 'Market Prices', 'Technology', 'Success Stories', 'Questions', 'General Discussion'].map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="">{t.community.selectCategory}</option>
+                {translations.english.community.categories.map((category, index) => (
+                  <option key={category} value={category}>{t.community.categories[index]}</option>
+                ))}
               </select>
-              <textarea placeholder="Share your experience, question, or insight..." value={newPost.content} onChange={e => setNewPost({ ...newPost, content: e.target.value })} style={{ ...styles.input, height: 120, resize: 'vertical' }} />
+              <textarea placeholder={t.community.bodyPlaceholder} value={newPost.content} onChange={e => setNewPost({ ...newPost, content: e.target.value })} style={{ ...styles.input, height: 120, resize: 'vertical' }} />
               <button onClick={createCommunityPost} disabled={loading} style={{ ...styles.primaryBtn('#7C3AED'), opacity: loading ? 0.6 : 1 }}>
-                {loading ? 'Posting...' : 'Publish Post →'}
+                {loading ? t.community.posting : `${t.community.publish} →`}
               </button>
             </div>
           </div>
@@ -610,7 +615,7 @@ export default function App() {
             {communityPosts.length === 0 && !loading && (
               <div style={{ ...styles.card, textAlign: 'center', padding: '48px 32px' }}>
                 <div style={{ fontSize: 40, marginBottom: 16 }}>◈</div>
-                <p style={{ color: theme.colors.muted }}>No posts yet. Be the first to share!</p>
+                <p style={{ color: theme.colors.muted }}>{t.community.empty}</p>
               </div>
             )}
             {communityPosts.map((post, i) => (
@@ -619,7 +624,7 @@ export default function App() {
                   <div>
                     <h4 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>{post.title}</h4>
                     <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                      <span style={{ ...styles.badge('#7C3AED'), fontSize: 10 }}>{post.category}</span>
+                      <span style={{ ...styles.badge('#7C3AED'), fontSize: 10 }}>{formatCategory(post.category)}</span>
                       <span style={{ fontSize: 12, color: theme.colors.muted }}>{formatPostDate(post)}</span>
                     </div>
                   </div>
@@ -630,7 +635,7 @@ export default function App() {
                 </div>
                 <p style={{ color: theme.colors.muted, lineHeight: 1.65, margin: '0 0 16px', fontSize: 15 }}>{post.content}</p>
                 <div style={{ display: 'flex', gap: 12 }}>
-                  {['Like', 'Comment', 'Share'].map(a => (
+                  {t.community.actions.map(a => (
                     <button key={a} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #E5E7EB', background: 'transparent', color: theme.colors.muted, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>{a}</button>
                   ))}
                 </div>
@@ -647,16 +652,16 @@ export default function App() {
       <div style={styles.container}>
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
           <div style={{ marginBottom: 36 }}>
-            <div style={{ ...styles.badge(theme.colors.error), marginBottom: 12 }}>Disease AI</div>
-            <h2 style={styles.h2}>Crop Disease Detection</h2>
-            <p style={{ color: theme.colors.muted, fontSize: 17 }}>Early detection saves your harvest. Upload an image and get an instant diagnosis.</p>
+            <div style={{ ...styles.badge(theme.colors.error), marginBottom: 12 }}>{t.disease.badge}</div>
+            <h2 style={styles.h2}>{t.disease.title}</h2>
+            <p style={{ color: theme.colors.muted, fontSize: 17 }}>{t.disease.subtitle}</p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 28 }}>
             {[
-              { icon: '🍄', title: 'Fungal', desc: 'Leaf spot, powdery mildew, rust', color: '#92400E' },
-              { icon: '🧫', title: 'Bacterial', desc: 'Blight, wilt diseases', color: '#1D4ED8' },
-              { icon: '🧪', title: 'Viral', desc: 'Mosaic, leaf curl infections', color: '#6D28D9' },
-              { icon: '⚡', title: 'Nutrient Deficiency', desc: 'Yellowing, weak growth', color: '#065F46' },
+              { icon: '🍄', title: t.disease.types[0][0], desc: t.disease.types[0][1], color: '#92400E' },
+              { icon: '🧫', title: t.disease.types[1][0], desc: t.disease.types[1][1], color: '#1D4ED8' },
+              { icon: '🧪', title: t.disease.types[2][0], desc: t.disease.types[2][1], color: '#6D28D9' },
+              { icon: '⚡', title: t.disease.types[3][0], desc: t.disease.types[3][1], color: '#065F46' },
             ].map((t, i) => (
               <div key={i} style={{ ...styles.card, display: 'flex', gap: 14, alignItems: 'flex-start', padding: '16px 20px' }}>
                 <div style={{ fontSize: 28 }}>{t.icon}</div>
@@ -665,29 +670,29 @@ export default function App() {
             ))}
           </div>
           <div style={{ ...styles.card, marginBottom: 24 }}>
-            <h3 style={{ ...styles.h3, color: theme.colors.error, marginBottom: 20 }}>Upload Crop Image</h3>
+            <h3 style={{ ...styles.h3, color: theme.colors.error, marginBottom: 20 }}>{t.disease.uploadTitle}</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
-              <FormInput placeholder="Crop type (e.g. Tomato)" value={diseaseCrop} onChange={e => setDiseaseCrop(e.target.value)} />
-              <FormInput placeholder="Symptoms (optional)" value={diseaseSymptoms} onChange={e => setDiseaseSymptoms(e.target.value)} />
+              <FormInput placeholder={t.disease.cropPlaceholder} value={diseaseCrop} onChange={e => setDiseaseCrop(e.target.value)} />
+              <FormInput placeholder={t.disease.symptomsPlaceholder} value={diseaseSymptoms} onChange={e => setDiseaseSymptoms(e.target.value)} />
             </div>
             <div style={{ border: `2px dashed ${theme.colors.error}40`, borderRadius: 12, padding: '40px 24px', textAlign: 'center', marginBottom: 16, cursor: 'pointer', background: `${theme.colors.error}04` }} onClick={() => document.getElementById('disease-upload').click()}>
               <input type="file" accept="image/*" id="disease-upload" style={{ display: 'none' }} onChange={e => setDiseaseImage(e.target.files[0])} />
               <div style={{ fontSize: 40, marginBottom: 12 }}>📷</div>
-              <div style={{ fontWeight: 600, color: theme.colors.muted }}>{diseaseImage ? `✓ ${diseaseImage.name}` : 'Click to upload a crop photo'}</div>
-              <div style={{ fontSize: 13, color: '#9CA3AF', marginTop: 6 }}>JPG, PNG up to 10MB</div>
+              <div style={{ fontWeight: 600, color: theme.colors.muted }}>{diseaseImage ? `✓ ${diseaseImage.name}` : t.disease.uploadPrompt}</div>
+              <div style={{ fontSize: 13, color: '#9CA3AF', marginTop: 6 }}>{t.disease.uploadHelp}</div>
             </div>
             <button onClick={detectDisease} disabled={loading} style={{ ...styles.primaryBtn(theme.colors.error), opacity: loading ? 0.6 : 1 }}>
-              {loading ? 'Analyzing image...' : 'Detect Disease →'}
+              {loading ? t.disease.analyzing : `${t.disease.detect} →`}
             </button>
           </div>
           {diseaseResults && (
             <div style={styles.card}>
-              <h3 style={{ ...styles.h3, color: theme.colors.error, marginBottom: 24 }}>Detection Results</h3>
+              <h3 style={{ ...styles.h3, color: theme.colors.error, marginBottom: 24 }}>{t.disease.results}</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
                 {[
-                  { label: 'Disease', value: diseaseResults.detection_result.disease_name, color: theme.colors.error },
-                  { label: 'Confidence', value: `${(diseaseResults.detection_result.confidence_score * 100).toFixed(1)}%`, color: theme.colors.sun },
-                  { label: 'Severity', value: diseaseResults.detection_result.severity_level, color: theme.colors.muted },
+                  { label: t.disease.disease, value: diseaseResults.detection_result.disease_name, color: theme.colors.error },
+                  { label: t.disease.confidence, value: `${(diseaseResults.detection_result.confidence_score * 100).toFixed(1)}%`, color: theme.colors.sun },
+                  { label: t.disease.severity, value: diseaseResults.detection_result.severity_level, color: theme.colors.muted },
                 ].map((s, i) => (
                   <div key={i} style={{ background: '#F9FAFB', borderRadius: 10, padding: '14px 16px' }}>
                     <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: s.color }}>{s.label}</div>
@@ -696,7 +701,7 @@ export default function App() {
                 ))}
               </div>
               <div style={{ marginBottom: 20 }}>
-                <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Treatment Plan</h4>
+                <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{t.disease.treatment}</h4>
                 {diseaseResults.detection_result.treatment_recommendations.map((t, i) => (
                   <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 14px', background: `${theme.colors.error}06`, borderRadius: 8, marginBottom: 8 }}>
                     <span style={{ color: theme.colors.error, fontWeight: 700, flexShrink: 0 }}>{i + 1}.</span>
@@ -705,7 +710,7 @@ export default function App() {
                 ))}
               </div>
               <div>
-                <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Preventive Measures</h4>
+                <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{t.disease.prevention}</h4>
                 {diseaseResults.detection_result.preventive_measures.map((m, i) => (
                   <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 14px', background: `${theme.colors.leaf}06`, borderRadius: 8, marginBottom: 8 }}>
                     <span style={{ color: theme.colors.leaf, fontWeight: 700, flexShrink: 0 }}>✓</span>
@@ -743,11 +748,11 @@ export default function App() {
             </div>
             {user ? (
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <span style={{ fontSize: 14, color: theme.colors.muted }}>Hello, {user.username}</span>
-                <button onClick={() => setUser(null)} style={{ ...styles.outlineBtn(theme.colors.error), padding: '6px 14px', fontSize: 13 }}>Logout</button>
+                <span style={{ fontSize: 14, color: theme.colors.muted }}>{t.common.hello}, {user.username}</span>
+                <button onClick={() => setUser(null)} style={{ ...styles.outlineBtn(theme.colors.error), padding: '6px 14px', fontSize: 13 }}>{t.common.logout}</button>
               </div>
             ) : (
-              <button onClick={() => setCurrentView('register')} style={styles.signInBtn}>Sign In</button>
+              <button onClick={() => setCurrentView('register')} style={styles.signInBtn}>{t.common.signIn}</button>
             )}
           </div>
         </div>
@@ -771,25 +776,25 @@ export default function App() {
                 <span style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>KrishiAi</span>
               </div>
               <p style={{ color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, fontSize: 15, maxWidth: 320, margin: 0 }}>
-                Empowering Indian farmers with technology-driven insights for sustainable, profitable agriculture.
+                {t.footer.body}
               </p>
             </div>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)', marginBottom: 16 }}>Platform</div>
-              {['Soil Analysis', 'Disease Detection', 'Weather Forecast', 'Community Forum'].map((l, i) => (
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)', marginBottom: 16 }}>{t.footer.platform}</div>
+              {t.footer.platformLinks.map((l, i) => (
                 <div key={i} style={{ color: 'rgba(255,255,255,0.7)', fontSize: 15, marginBottom: 10, cursor: 'pointer' }}>{l}</div>
               ))}
             </div>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)', marginBottom: 16 }}>Legal</div>
-              {['Privacy Policy', 'Terms of Service', 'Contact Us'].map((l, i) => (
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)', marginBottom: 16 }}>{t.footer.legal}</div>
+              {t.footer.legalLinks.map((l, i) => (
                 <div key={i} style={{ color: 'rgba(255,255,255,0.7)', fontSize: 15, marginBottom: 10, cursor: 'pointer' }}>{l}</div>
               ))}
             </div>
           </div>
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.12)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>© 2025 KrishiAi. All rights reserved.</span>
-            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Made with 🌱 for Indian farmers</span>
+            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>{t.footer.rights}</span>
+            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>{t.footer.made}</span>
           </div>
         </div>
       </footer>

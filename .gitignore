@@ -1,2 +1,7 @@
 KrishiAifrontent.zip
 
+node_modules
+.env
+dist/
+dist
+
